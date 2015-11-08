@@ -110,4 +110,22 @@ class ProfileManifest
     return $meta;
   }
 
+  public function hasVersion($version)
+  {
+    foreach ($this->decodedJson->profiles as $profile) {
+      if ($profile->version == $version) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public function getTopFilePath($version)
+  {
+    return 'rainmaker'
+      . '/' . $this->getType()
+      . '/' . $this->getName()
+      . '/v' . str_replace('.', '_', $version);
+  }
 }

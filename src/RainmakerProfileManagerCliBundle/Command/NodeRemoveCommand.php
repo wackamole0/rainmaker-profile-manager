@@ -10,28 +10,18 @@ use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Helper\TopFileHelper;
 
-class NodeAddCommand extends Command
+class NodeRemoveCommand extends Command
 {
 
   protected function configure()
   {
     $this
-      ->setName('node:add')
-      ->setDescription('Add a node into Salt top file')
+      ->setName('node:remove')
+      ->setDescription('Remove a node from the Salt top file')
       ->addArgument(
         'node',
         InputArgument::OPTIONAL,
         'The unique Salt minion id'
-      )
-      ->addArgument(
-        'profile',
-        InputArgument::OPTIONAL,
-        'The name of the profile'
-      )
-      ->addArgument(
-        'version',
-        InputArgument::OPTIONAL,
-        'The version of the profile'
       );
   }
 
@@ -48,29 +38,7 @@ class NodeAddCommand extends Command
       }
     }
 
-    $profile = $input->getArgument('profile');
-    if (empty($profile)) {
-      if ($input->isInteractive()) {
-        $profile = $this->askForProfileName($input, $output);
-      }
-      else {
-        $output->writeln("<error>You must specify the profile name.</error>");
-        return 1;
-      }
-    }
-
-    $version = $input->getArgument('version');
-    if (empty($version)) {
-      if ($input->isInteractive()) {
-        $version = $this->askForProfileVersion($input, $output);
-      }
-      else {
-        $output->writeln("<error>You must specify the profile version.</error>");
-        return 1;
-      }
-    }
-
-    TopFileHelper::AddNode($minionId, $profile, $version);
+    TopFileHelper::RemoveNode($minionId);
   }
 
   protected function askForNodeMinionId(InputInterface $input, OutputInterface $output)
