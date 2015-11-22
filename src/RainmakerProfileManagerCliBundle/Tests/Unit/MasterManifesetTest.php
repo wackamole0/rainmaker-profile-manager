@@ -168,7 +168,25 @@ class CreateTest extends AbstractUnitTest
      */
     public function testPurgingCaches()
     {
-        throw new \RuntimeException('test body required implementation');
+        $this->filesystemMock = $this->createFilesystemMock();
+
+        $this->masterManifest = new MasterManifest();
+        $this->masterManifest
+            ->setFilesystem($this->filesystemMock)
+            ->load();
+
+        $this->fillCachesWithMockData();
+
+        $projectProfileCachePath = MasterManifest::$lxcRootfsCacheFullPath . DIRECTORY_SEPARATOR . 'project';
+        $branchProfileCachePath = MasterManifest::$lxcRootfsCacheFullPath . DIRECTORY_SEPARATOR . 'branch';
+
+        $this->assertTrue($this->filesystemMock->exists($projectProfileCachePath . DIRECTORY_SEPARATOR . 'rainmaker/default-project'));
+        $this->assertTrue($this->filesystemMock->exists($branchProfileCachePath . DIRECTORY_SEPARATOR . 'rainmaker/default-branch'));
+        $this->masterManifest->purgeCaches();
+        $this->assertTrue($this->filesystemMock->exists($projectProfileCachePath));
+        $this->assertTrue($this->filesystemMock->exists($branchProfileCachePath));
+        $this->assertFalse($this->filesystemMock->exists($projectProfileCachePath . DIRECTORY_SEPARATOR . 'rainmaker/default-project'));
+        $this->assertFalse($this->filesystemMock->exists($branchProfileCachePath . DIRECTORY_SEPARATOR . 'rainmaker/default-branch'));
     }
 
     /**
@@ -209,28 +227,6 @@ class CreateTest extends AbstractUnitTest
         ProfileInstaller::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock';
 
         GitRepoMock::$profilesRepo = array();
-
-        /*
-        $profileManifest = new \stdClass();
-        $profileManifest->type = 'core';
-        $profileManifest->name = 'core';
-        GitRepoMock::$profilesRepo['https://github.com/wackamole0/rainmaker-salt-core.git'] = json_encode($profileManifest, JSON_PRETTY_PRINT);
-
-        $profileManifest = new \stdClass();
-        $profileManifest->type = 'project';
-        $profileManifest->name = 'rainmaker/default-project';
-        GitRepoMock::$profilesRepo['https://github.com/wackamole0/rainmaker-default-project-profile.git'] = json_encode($profileManifest, JSON_PRETTY_PRINT);
-
-        $profileManifest = new \stdClass();
-        $profileManifest->type = 'branch';
-        $profileManifest->name = 'rainmaker/default-branch';
-        GitRepoMock::$profilesRepo['https://github.com/wackamole0/rainmaker-default-branch-profile.git'] = json_encode($profileManifest, JSON_PRETTY_PRINT);
-
-        $profileManifest = new \stdClass();
-        $profileManifest->type = 'branch';
-        $profileManifest->name = 'rainmaker/drupal-classic';
-        GitRepoMock::$profilesRepo['https://github.com/wackamole0/rainmaker-drupal-classic-profile.git'] = json_encode($profileManifest, JSON_PRETTY_PRINT);
-        */
 
         $profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'core',
@@ -298,11 +294,6 @@ class CreateTest extends AbstractUnitTest
 
         $this->profileUrl = 'https://github.com/wackamole0/rainmaker-symfony2.git';
 
-//        $this->profileManifest = new \stdClass();
-//        $this->profileManifest->type = 'branch';
-//        $this->profileManifest->name = 'wackamole0/symfony2';
-//        GitRepoMock::$profilesRepo[$this->profileUrl] = json_encode($this->profileManifest, JSON_PRETTY_PRINT);
-
         $this->profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'branch',
             'name' => 'wackamole0/symfony2',
@@ -341,6 +332,42 @@ class CreateTest extends AbstractUnitTest
         }
 
         return $profileManifest;
+    }
+
+    protected function fillCachesWithMockData()
+    {
+        if (empty($this->filesystemMock)) {
+            $this->filesystemMock = $this->createFilesystemMock();
+        }
+
+        if (empty($this->masterManifest)) {
+            $this->masterManifest = new MasterManifest();
+            $this->masterManifest
+                ->setFilesystem($this->filesystemMock)
+                ->load();
+        }
+
+        $projectProfileCachePath = implode(DIRECTORY_SEPARATOR, array(
+            MasterManifest::$lxcRootfsCacheFullPath,
+            'project',
+            'rainmaker/default-project',
+            '1'
+        ));
+        $this->filesystemMock->mkdir($projectProfileCachePath);
+        for ($i = 0; $i <= 10; $i++) {
+            $this->filesystemMock->touch($projectProfileCachePath . DIRECTORY_SEPARATOR . $i . '.tgz');
+        }
+
+        $branchProfileCachePath = implode(DIRECTORY_SEPARATOR, array(
+            MasterManifest::$lxcRootfsCacheFullPath,
+            'branch',
+            'rainmaker/default-branch',
+            '1'
+        ));
+        $this->filesystemMock->mkdir($branchProfileCachePath);
+        for ($i = 0; $i <= 10; $i++) {
+            $this->filesystemMock->touch($branchProfileCachePath . DIRECTORY_SEPARATOR . $i . '.tgz');
+        }
     }
 
 }

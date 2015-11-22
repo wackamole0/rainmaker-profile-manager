@@ -10,11 +10,11 @@ use RainmakerProfileManagerCliBundle\Util\ProfileInstaller;
  */
 class MasterManifest
 {
-
     public static $saltstackBasePath = '/srv/saltstack';
     public static $profilesLocationBasePath = '/srv/saltstack/profiles';
     public static $profileManifestBaseName = 'manifest.json';
     public static $profileInstallerClass = null;
+    public static $lxcRootfsCacheFullPath = '/var/cache/lxc/rainmaker';
 
     /**
      * @var \RainmakerProfileManagerCliBundle\Util\Filesystem
@@ -465,5 +465,16 @@ class MasterManifest
             ->load($this->getPillarDataTopFileFullPath());
 
         return $pillarTopFile;
+    }
+
+    public function purgeCaches()
+    {
+        $projectCachePath = static::$lxcRootfsCacheFullPath . DIRECTORY_SEPARATOR . 'project';
+        $this->filesystem->remove($projectCachePath);
+        $this->filesystem->mkdir($projectCachePath);
+
+        $branchCachePath = static::$lxcRootfsCacheFullPath . DIRECTORY_SEPARATOR . 'branch';
+        $this->filesystem->remove($branchCachePath);
+        $this->filesystem->mkdir($branchCachePath);
     }
 }
