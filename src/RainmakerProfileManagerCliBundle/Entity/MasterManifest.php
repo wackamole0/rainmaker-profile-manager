@@ -2,183 +2,468 @@
 
 namespace RainmakerProfileManagerCliBundle\Entity;
 
+use RainmakerProfileManagerCliBundle\Util\Filesystem;
+use RainmakerProfileManagerCliBundle\Util\ProfileInstaller;
+
 /**
  * @package RainmakerProfileManagerCliBundle\Entity
  */
 class MasterManifest
 {
 
-  protected static $profilesLocationBasePath = '/srv/saltstack/profiles';
+    public static $saltstackBasePath = '/srv/saltstack';
+    public static $profilesLocationBasePath = '/srv/saltstack/profiles';
+    public static $profileManifestBaseName = 'manifest.json';
+    public static $profileInstallerClass = null;
 
-  protected $manifestFilename = '/srv/saltstack/profiles/manifest.json';
-  protected $fh;
-  protected $decodedJson;
+    /**
+     * @var \RainmakerProfileManagerCliBundle\Util\Filesystem
+     */
+    protected $filesystem = null;
+    protected $manifestFilename = '/srv/saltstack/profiles/manifest.json';
+    protected $data = null;
 
-  public static function LoadManifest($lock = false)
-  {
-    $manifest = new MasterManifest();
-    $manifest->load($lock);
-    $manifest->normalise();
-    return $manifest;
-  }
-
-  public function __constructor()
-  {
-    $this->decodedJson = new \stdClass();
-  }
-
-  public function getProfiles()
-  {
-    return $this->decodedJson->profiles;
-  }
-
-  public function load($lock, $filename = null)
-  {
-    if (!empty($filename)) {
-      $this->manifestFilename = $filename;
+    public static function LoadManifest($lock = false)
+    {
+        $manifest = new MasterManifest();
+        $manifest->load($lock);
+        $manifest->normalise();
+        return $manifest;
     }
 
-    $fh = fopen($this->manifestFilename, 'r+');
-    if ($lock) {
-      flock($fh, LOCK_EX);
-      $this->fh = $fh;
-    }
-    $content = fread($fh, filesize($this->manifestFilename));
-    $this->decodedJson = json_decode($content);
-    if (!$lock) {
-      fclose($fh);
+    public function __construct()
+    {
+        if (is_null(static::$profileInstallerClass)) {
+            static::$profileInstallerClass = '\RainmakerProfileManagerCliBundle\Util\ProfileInstaller';
+        }
+
+        $this->data = new \stdClass();
     }
 
-    return $this;
-  }
-
-  public function update($unlock = false)
-  {
-    $fh = $this->fh;
-    if (!$fh) {
-      $fh = fopen($this->manifestFilename, 'r+');
+    public function getFilesystem()
+    {
+        if (is_null($this->filesystem)) {
+            $this->filesystem = new Filesystem();
+        }
+        return $this->filesystem;
     }
 
-    ftruncate($fh, 0);
-    fseek($fh, 0);
-    fwrite($fh, json_encode($this->decodedJson));
+    public function setFilesystem($fs)
+    {
+        $this->filesystem = $fs;
 
-    if ($this->fh) {
-      if ($unlock) {
-        $this->releaseLock();
-      }
-    }
-    else {
-      fclose($fh);
+        return $this;
     }
 
-    return $this;
-  }
-
-  public function releaseLock()
-  {
-    if ($this->fh) {
-      fclose($this->fh);
+    /**
+     * @return ProfileMeta[]
+     */
+    protected function getProfilesMetaData()
+    {
+        $profileMetas = array();
+        foreach ($this->data->profiles as $profileInfo) {
+            $profileMeta = new ProfileMeta();
+            $profileMeta->populate($profileInfo);
+            $profileMetas[] = $profileMeta;
+        }
+        return $profileMetas;
     }
 
-    return $this;
-  }
+    /**
+     * @return Profile[]
+     */
+    public function getProfiles()
+    {
+        $profiles = array();
+        foreach ($this->getProfilesMetaData() as $profileMeta) {
+            $profiles[] = $this->loadProfileFromMeta($profileMeta);
+        }
 
-  public function normalise()
-  {
-    if (!isset($this->decodedJson->profiles)) {
-      $this->decodedJson->profiles = array();
-    }
-  }
-
-  public function profilePresent($profileManifest)
-  {
-    foreach ($this->decodedJson->profiles as $profile) {
-      if ($profile->name == $profileManifest->getName() && $profile->type == $profileManifest->getType()) {
-        return true;
-      }
+        return $profiles;
     }
 
-    return false;
-  }
+    public function getProfile($profileName)
+    {
+        foreach ($this->getProfiles() as $profile) {
+            if ($profile->getName() == $profileName) {
+                return $profile;
+            }
+        }
 
-  public function addProfile(ProfileManifest $profileManifest)
-  {
-    if ($this->profilePresent($profileManifest)) {
-      throw new \RuntimeException('Profile already installed');
+        return null;
     }
 
-    $this->decodedJson->profiles[] = $profileManifest->masterMetadata();
-    $this->sortProfiles();
-
-    return $this;
-  }
-
-  public function removeProfile(ProfileManifest $profileManifest)
-  {
-    if (!$this->profilePresent($profileManifest)) {
-      throw new \RuntimeException('Profile is not installed');
-    }
-
-    $this->decodedJson->profiles[] = $profileManifest->masterMetadata();
-    foreach ($this->decodedJson->profiles as $index => $profile) {
-      if ($profile->name == $profileManifest->getName()) {
-        unset($this->decodedJson->profiles[$index]);
-      }
-    }
-    $this->sortProfiles();
-
-    return $this;
-  }
-
-  public static function ProfilePathFromProfile($profile)
-  {
-    $path = static::$profilesLocationBasePath;
-    if ('core' == $profile->type) {
-      $path .= '/core';
-    }
-    else {
-      $path .= '/' . $profile->type . '/' . $profile->name;
-    }
-
-    return $path;
-  }
-
-  public function getFilesystemPathsOfProfiles()
-  {
-    $paths = array();
-
-    foreach ($this->getProfiles() as $profile) {
-      $paths[] = $this->ProfilePathFromProfile($profile);
-    }
-
-    return $paths;
-  }
-
-  public function getProfileByName($profileName)
-  {
-    foreach ($this->getProfiles() as $profile) {
-      if ($profile->name == $profileName) {
+    protected function loadProfileFromMeta(ProfileMeta $profileMeta)
+    {
+        $profile = new Profile($this->profileFullPath($profileMeta));
+        $profile->setFilesystem($this->getFilesystem());
         return $profile;
-      }
     }
 
-    return null;
-  }
+    public function load($filename = null)
+    {
+        if (!empty($filename)) {
+            $this->manifestFilename = $filename;
+        }
 
-  public function loadProfileManifestForProfileWithName($profileName)
-  {
-    return ProfileManifest::LoadProfileManifest($this->ProfilePathFromProfile($this->getProfileByName($profileName)));
-  }
+        $content = $this->getFilesystem()->getFileContents($this->manifestFilename);
+        $this->data = json_decode($content);
+        $this->normalise();
 
-  protected function sortProfiles()
-  {
-    usort($this->decodedJson->profiles, array($this, 'cmpMasterManifestProfiles'));
-  }
+        return $this;
+    }
 
-  protected function cmpMasterManifestProfiles($profile1, $profile2)
-  {
-    return strcmp($profile1->name, $profile2->name);
-  }
+    public function install()
+    {
+        foreach ($this->getProfilesMetaData() as $profileMeta) {
+            $installedProfile = $this->installIfMissing($profileMeta);
 
+            $installedProfile->enable();
+        }
+
+        $saltTopFile = $this->getSaltTopFile();
+        $pillarTopFile = $this->getPillarTopFile();
+
+        foreach ($this->getNodes() as $node) {
+            $saltTopFile->addOrUpdate($node);
+            $pillarTopFile->addOrUpdate($node);
+            $saltTopFile->save();
+            $pillarTopFile->save();
+        }
+    }
+
+    protected function installIfMissing(ProfileMeta $profileMeta)
+    {
+        if (!$this->profilePresent($profileMeta)) {
+            return $this->installProfile($profileMeta);
+        }
+
+        return $this->loadProfileFromMeta($profileMeta);
+    }
+
+    /**
+     * @param $profileMeta
+     * @return Profile
+     */
+    protected function installProfile(ProfileMeta $profileMeta)
+    {
+        $class = static::$profileInstallerClass;
+        $profileInstaller = new $class($profileMeta->getUrl(), static::$profilesLocationBasePath);
+        $profile = $profileInstaller
+            ->setFilesystem($this->getFilesystem())
+            ->download()
+            ->verify()
+            ->install();
+
+        return $profile;
+    }
+
+    /**
+     * @param $url
+     * @return Profile
+     */
+    public function installProfileFromUrl($url, $activate = true, $branch = 'master')
+    {
+        $class = static::$profileInstallerClass;
+        $profileInstaller = new $class($url, static::$profilesLocationBasePath, $branch);
+        $profile = $profileInstaller
+            ->setFilesystem($this->getFilesystem())
+            ->download()
+            ->verify()
+            ->install();
+
+        $this->addProfileToManifest($profile, $url);
+
+        if ($activate) {
+            $profile->enable();
+        }
+
+        return $profile;
+    }
+
+    public function removeProfileByName($profileName)
+    {
+        if (!$this->profileWithNamePresent($profileName)) {
+            throw new \RuntimeException("Cannot uninstall profile with name '$profileName' as it is not installed");
+        }
+
+        $profile = $this->getProfile($profileName);
+        $profile->disable();
+
+        $filesystem = $this->getFilesystem();
+        if ($filesystem->exists($profile->getFullPath())) {
+            $filesystem->remove($profile->getFullPath());
+        }
+
+        $this->removeProfileFromManifest($profile);
+
+        return $this;
+    }
+
+    protected function profilePresent(ProfileMeta $profileMeta)
+    {
+        return $this->getFilesystem()->exists($this->profileManifestFullPath($profileMeta));
+    }
+
+    public function profileWithUrlPresent($url)
+    {
+        foreach ($this->getProfilesMetaData() as $profileMeta) {
+            if ($profileMeta->getUrl() == $url) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function profileWithNamePresent($profileName)
+    {
+        foreach ($this->getProfilesMetaData() as $profileMeta) {
+            if ($profileMeta->getName() == $profileName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function profileFullPath(ProfileMeta $profileMeta)
+    {
+        $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
+        if (!in_array($profileMeta->getType(), array('core', 'project', 'branch'))) {
+            throw new \RuntimeException('Profile type "' . $profileMeta->getType() . '" is not valid');
+        }
+
+        if ('core' != $profileMeta->getType()) {
+            $pathParts[] = $profileMeta->getName();
+        }
+
+        return implode(DIRECTORY_SEPARATOR, $pathParts);
+    }
+
+    protected function profileManifestFullPath(ProfileMeta $profileMeta)
+    {
+        $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
+        if (!in_array($profileMeta->getType(), array('core', 'project', 'branch'))) {
+            throw new \RuntimeException('Profile type "' . $profileMeta->getType() . '" is not valid');
+        }
+
+        if ('core' != $profileMeta->getType()) {
+            $pathParts[] = $profileMeta->getName();
+        }
+
+        $pathParts[] = static::$profileManifestBaseName;
+
+        return implode(DIRECTORY_SEPARATOR, $pathParts);
+    }
+
+    protected function addProfileToManifest(Profile $profile, $url, $branch = 'master')
+    {
+        $metadata = new \stdClass();
+        $metadata->name = $profile->getName();
+        $metadata->type = $profile->getType();
+        $metadata->branch = $branch;
+        $metadata->url = $url;
+
+        $this->data->profiles[] = $metadata;
+        $this->sortProfiles();
+
+        return $this;
+    }
+
+    protected function removeProfileFromManifest(Profile $profile)
+    {
+        foreach ($this->data->profiles as $index => $profileInfo) {
+            if ($profile->getName() == $profileInfo->name) {
+                unset($this->data->profiles[$index]);
+            }
+        }
+
+        $this->sortProfiles();
+
+        return $this;
+    }
+
+    protected function normalise()
+    {
+        if (!isset($this->data->profiles)) {
+            $this->data->profiles = array();
+        }
+    }
+
+    protected function sortProfiles()
+    {
+        usort($this->data->profiles, array($this, 'cmpMasterManifestProfiles'));
+    }
+
+    protected function cmpMasterManifestProfiles($profile1, $profile2)
+    {
+        return strcmp($profile1->name, $profile2->name);
+    }
+
+    public function getSaltStateTopFileFullPath($env = 'base')
+    {
+        return implode(DIRECTORY_SEPARATOR, array(static::$saltstackBasePath, 'salt', $env, 'top.sls'));
+    }
+
+    public function getPillarDataTopFileFullPath($env = 'base')
+    {
+        return implode(DIRECTORY_SEPARATOR, array(static::$saltstackBasePath, 'pillar', $env, 'top.sls'));
+    }
+
+    /**
+     * @return Node[]
+     */
+    public function getNodes()
+    {
+        $nodes = array();
+        foreach ($this->data->nodes as $nodeInfo) {
+            $profile = $this->getProfile($nodeInfo->profile);
+            $nodeInfo->type = $profile->getType();
+
+            $node = new Node();
+            $node->populate($nodeInfo);
+            $nodes[] = $node;
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * @param $id
+     * @return Node
+     */
+    public function getNode($id)
+    {
+        foreach ($this->getNodes() as $node) {
+            if ($node->getId() == $id) {
+                return $node;
+            }
+        }
+
+        return null;
+    }
+
+    public function nodeWithIdPresent($id)
+    {
+        foreach ($this->getNodes() as $node) {
+            if ($node->getId() == $id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function addNode($id, $profileName, $profileVersion, $environment = 'base')
+    {
+        if ($this->nodeWithIdPresent($id)) {
+            throw new \RuntimeException("Node '$id' already exists");
+        }
+
+        if (!$this->profileWithNamePresent($profileName)) {
+            throw new \RuntimeException("Profile with name '$profileName' is not present");
+        }
+
+        $profile = $this->getProfile($profileName);
+        if (!$profile->hasVersion($profileVersion)) {
+            throw new \RuntimeException("Profile with name '$profileName' does not have version '$profileVersion' present");
+        }
+
+        $nodeMeta = new \stdClass();
+        $nodeMeta->id = $id;
+        $nodeMeta->profile = $profileName;
+        $nodeMeta->version = $profileVersion;
+        $nodeMeta->environment = $environment;
+        $nodeMeta->type = $profile->getType();
+
+        $node = new Node();
+        $node->populate($nodeMeta);
+
+        $saltTopFile = $this->getSaltTopFile();
+        $saltTopFile->addOrUpdate($node);
+        $saltTopFile->save();
+
+        $pillarTopFile = $this->getPillarTopFile();
+        $pillarTopFile->addOrUpdate($node);
+        $pillarTopFile->save();
+
+        $this->addNodeToManifest($node);
+
+        return $node;
+    }
+
+    public function removeNode($id)
+    {
+        if (!$this->nodeWithIdPresent($id)) {
+            throw new \RuntimeException("Node '$id' does not exist");
+        }
+
+        $node = $this->getNode($id);
+
+        $saltTopFile = $this->getSaltTopFile();
+        $saltTopFile->remove($node);
+        $saltTopFile->save();
+
+        $pillarTopFile = $this->getPillarTopFile();
+        $pillarTopFile->remove($node);
+        $pillarTopFile->save();
+
+        $this->removeNodeFromManifest($node);
+
+        return $node;
+    }
+
+    protected function addNodeToManifest(Node $node)
+    {
+        $metadata = $node->asMasterManifestMeta();
+
+        $this->data->nodes[] = $metadata;
+        $this->sortNodes();
+
+        return $this;
+    }
+
+    protected function removeNodeFromManifest(Node $node)
+    {
+        foreach ($this->data->nodes as $index => $nodeInfo) {
+            if ($node->getId() == $nodeInfo->id) {
+                unset($this->data->nodes[$index]);
+            }
+        }
+
+        $this->sortNodes();
+
+        return $this;
+    }
+
+    protected function sortNodes()
+    {
+        usort($this->data->nodes, array($this, 'cmpMasterManifestNodes'));
+    }
+
+    protected function cmpMasterManifestNodes($node1, $node2)
+    {
+        return strcmp($node1->id, $node2->id);
+    }
+
+    protected function getSaltTopFile()
+    {
+        $saltTopFile = new SaltTopFile();
+        $saltTopFile
+            ->setFilesystem($this->getFilesystem())
+            ->load($this->getSaltStateTopFileFullPath());
+
+        return $saltTopFile;
+    }
+
+    protected function getPillarTopFile()
+    {
+        $pillarTopFile = new PillarTopFile();
+        $pillarTopFile
+            ->setFilesystem($this->getFilesystem())
+            ->load($this->getPillarDataTopFileFullPath());
+
+        return $pillarTopFile;
+    }
 }
