@@ -152,7 +152,20 @@ class CreateTest extends AbstractUnitTest
      */
     public function testListingAvailableProfileUpdates()
     {
-        throw new \RuntimeException('test body required implementation');
+        $this->createMockMasterManifestInstallation();
+        GitRepoMock::$profilesWithUpdates['https://github.com/wackamole0/rainmaker-default-project-profile.git'] = 1;
+        GitRepoMock::$profilesWithUpdates['https://github.com/wackamole0/rainmaker-default-branch-profile.git'] = 2;
+
+        foreach ($this->masterManifest->getProfiles() as $profile) {
+            $profile->fetchUpdates();
+        }
+
+        $output = $this->masterManifest->showAvailableUpdates();
+
+        $this->assertEquals(
+            file_get_contents($this->getPathToTestAcceptanceFilesDirectory() . DIRECTORY_SEPARATOR . 'availableProfileUpdatesListing'),
+            $output
+        );
     }
 
     /**
@@ -234,6 +247,11 @@ class CreateTest extends AbstractUnitTest
 
     //- Utility methods
 
+
+    protected function getPathToTestAcceptanceFilesDirectory()
+    {
+        return $this->getPathToTestAcceptanceFilesBaseDirectory() . '/masterManifest';
+    }
 
     protected function createFilesystemMock()
     {
