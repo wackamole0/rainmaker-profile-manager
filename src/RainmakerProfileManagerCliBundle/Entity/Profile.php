@@ -14,21 +14,34 @@ class Profile
     public static $saltStateTreeBasePath = '/srv/saltstack/salt';
     public static $pillarDataTreeBasePath = '/srv/saltstack/pillar';
     public static $profileManifestBaseName = 'manifest.json';
+    public static $gitRepoClass = null;
     public static $processRunnerClass = null;
 
     protected $filesystem = null;
     protected $path = null;
+    protected $url = null;
+
+    /**
+     * @var \RainmakerProfileManagerCliBundle\Util\GitRepo
+     */
     protected $repo = null;
+
     protected $manifest = null;
 
-    public function __construct($path)
+    public function __construct($path, $url)
     {
+        if (is_null(static::$gitRepoClass)) {
+            static::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Util\GitRepo';
+        }
+
         if (is_null(static::$processRunnerClass)) {
             static::$processRunnerClass = '\RainmakerProfileManagerCliBundle\Util\ProcessRunner';
         }
 
         $this->path = $path;
-        $this->repo = new GitRepo($path);
+        $this->url = $url;
+        $class = static::$gitRepoClass;
+        $this->repo = new $class($path, $url);
     }
 
     public function getFilesystem()
@@ -56,9 +69,10 @@ class Profile
         return $this->getManifest()->type;
     }
 
-//    public function getUrl() {
-//        return $this->getManifest()->;
-//    }
+    public function getUrl()
+    {
+        return $this->url;
+    }
 
     public function getFullPath()
     {
@@ -245,4 +259,18 @@ class Profile
         return implode(DIRECTORY_SEPARATOR, $path_parts);
     }
 
+    public function hasAvailableUpdates($fetchUpdates = true)
+    {
+        return $this->repo->hasAvailableUpdates($fetchUpdates);
+    }
+
+    public function fetchUpdates()
+    {
+        $this->repo->fetchUpdates();
+    }
+
+    public function update($fetchUpdates = true)
+    {
+        $this->repo->update($fetchUpdates);
+    }
 }

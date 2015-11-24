@@ -53,7 +53,7 @@ class ProfileInstaller
         $filesystem = $this->getFilesystem();
         $this->tmpDirectory = $filesystem->makeTempDir();
         $this->cloneRepo($this->tmpDirectory);
-        $this->profile = new Profile($this->tmpDirectory);
+        $this->profile = new Profile($this->tmpDirectory, $this->url);
         $this->profile->setFilesystem($this->getFilesystem());
 
         try {
@@ -81,7 +81,7 @@ class ProfileInstaller
         $filesystem->mirror($this->tmpDirectory, $this->profileInstallPath());
         $filesystem->remove($this->tmpDirectory);
 
-        $profile = new Profile($this->profileInstallPath());
+        $profile = new Profile($this->profileInstallPath(), $this->url);
         $profile->setFilesystem($this->getFilesystem());
         return $profile;
     }

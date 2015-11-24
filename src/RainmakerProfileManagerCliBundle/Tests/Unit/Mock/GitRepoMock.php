@@ -12,6 +12,9 @@ use RainmakerProfileManagerCliBundle\Util\GitRepo;
 class GitRepoMock extends GitRepo {
 
     public static $profilesRepo = array();
+    public static $profilesWithUpdates = array();
+
+    protected $commitsBehind = 0;
 
     public function cloneIt($url, $branch = 'master')
     {
@@ -19,6 +22,31 @@ class GitRepoMock extends GitRepo {
         $this->branch = $branch;
 
         $this->createMockGitRepo();
+    }
+
+    public function hasAvailableUpdates($fetchUpdates = true)
+    {
+        if ($fetchUpdates) {
+            $this->fetchUpdates();
+        }
+
+        return $this->commitsBehind > 0;
+    }
+
+    public function fetchUpdates()
+    {
+        if (isset(static::$profilesWithUpdates[$this->getUrl()])) {
+            $this->commitsBehind = static::$profilesWithUpdates[$this->getUrl()];
+        }
+    }
+
+    public function update($fetchUpdates = true)
+    {
+        if ($fetchUpdates) {
+            $this->fetchUpdates();
+        }
+
+        $this->commitsBehind = 0;
     }
 
     protected function createMockGitRepo()

@@ -160,7 +160,33 @@ class CreateTest extends AbstractUnitTest
      */
     public function testUpdatingProfiles()
     {
-        throw new \RuntimeException('test body required implementation');
+        $this->createMockMasterManifestInstallation();
+        GitRepoMock::$profilesWithUpdates['https://github.com/wackamole0/rainmaker-default-project-profile.git'] = 1;
+        GitRepoMock::$profilesWithUpdates['https://github.com/wackamole0/rainmaker-default-branch-profile.git'] = 2;
+
+        foreach ($this->masterManifest->getProfiles() as $profile) {
+            $profile->fetchUpdates();
+        }
+
+        $profileCore = $this->masterManifest->getProfile('core');
+        $profileDefaultProject = $this->masterManifest->getProfile('rainmaker/default-project');
+        $profileDefaultBranch = $this->masterManifest->getProfile('rainmaker/default-branch');
+
+        $this->assertFalse($profileCore->hasAvailableUpdates());
+        $this->assertTrue($profileDefaultProject->hasAvailableUpdates());
+        $this->assertTrue($profileDefaultBranch->hasAvailableUpdates());
+
+        $this->masterManifest->updateAllProfiles();
+
+        GitRepoMock::$profilesWithUpdates = array();
+
+        $profileCore = $this->masterManifest->getProfile('core');
+        $profileDefaultProject = $this->masterManifest->getProfile('rainmaker/default-project');
+        $profileDefaultBranch = $this->masterManifest->getProfile('rainmaker/default-branch');
+
+        $this->assertFalse($profileCore->hasAvailableUpdates());
+        $this->assertFalse($profileDefaultProject->hasAvailableUpdates());
+        $this->assertFalse($profileDefaultBranch->hasAvailableUpdates());
     }
 
     /**
@@ -225,6 +251,7 @@ class CreateTest extends AbstractUnitTest
 
         GitRepo::$processRunnerClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\ProcessRunnerMock';
         ProfileInstaller::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock';
+        Profile::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock';
 
         GitRepoMock::$profilesRepo = array();
 

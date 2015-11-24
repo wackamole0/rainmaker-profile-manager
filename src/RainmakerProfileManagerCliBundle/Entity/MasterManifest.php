@@ -95,7 +95,7 @@ class MasterManifest
 
     protected function loadProfileFromMeta(ProfileMeta $profileMeta)
     {
-        $profile = new Profile($this->profileFullPath($profileMeta));
+        $profile = new Profile($this->profileFullPath($profileMeta), $profileMeta->getUrl());
         $profile->setFilesystem($this->getFilesystem());
         return $profile;
     }
@@ -476,5 +476,27 @@ class MasterManifest
         $branchCachePath = static::$lxcRootfsCacheFullPath . DIRECTORY_SEPARATOR . 'branch';
         $this->filesystem->remove($branchCachePath);
         $this->filesystem->mkdir($branchCachePath);
+    }
+
+    public function updateAllProfiles()
+    {
+        foreach ($this->getProfiles() as $profile) {
+            $this->updateProfile($profile);
+        }
+    }
+
+    public function updateProfileWithName($profileName)
+    {
+        $profile = $this->getProfile($profileName);
+        if (empty($profile)) {
+            throw new \RuntimeException("Profile with name '" . $profileName . "' does not exist");
+        }
+
+        $this->updateProfile($profile);
+    }
+
+    protected function updateProfile(Profile $profile)
+    {
+        $profile->update();
     }
 }
