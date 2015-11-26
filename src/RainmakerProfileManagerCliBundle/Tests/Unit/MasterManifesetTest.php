@@ -86,6 +86,24 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
+     * Test installing a new profile to empty manifest.
+     */
+    public function testInstallNewProfileToEmptyManifest()
+    {
+        //$this->createMockMasterManifestInstallation();
+        $this->installMockProfile();
+
+        // Check the profile is installed on the filesystem correctly.
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/.git'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/manifest.json'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getSaltStateTreeSymlinkFullPath()));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getPillarDataTreeSymlinkFullPath()));
+
+        // Check here that the profile has been added to the master manifest.
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+    }
+
+    /**
      * Test uninstalling an existing profile.
      */
     public function testUninstallExistingProfile()
@@ -266,6 +284,17 @@ class CreateTest extends AbstractUnitTest
         if (empty($this->filesystemMock)) {
             $this->filesystemMock = $this->createFilesystemMock();
         }
+
+        $this->filesystemMock->putFileContents(
+            '/srv/saltstack/profiles/manifest.json',
+            file_get_contents(implode(DIRECTORY_SEPARATOR,
+                array(
+                    $this->getPathToTestAcceptanceFilesDirectory(),
+                    'buildFromManifest',
+                    'manifest.json'
+                )
+            ))
+        );
 
         GitRepo::$processRunnerClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\ProcessRunnerMock';
         ProfileInstaller::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock';

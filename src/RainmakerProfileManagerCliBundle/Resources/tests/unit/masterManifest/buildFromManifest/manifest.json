@@ -1,0 +1,48 @@
+{
+  "profiles": [
+    {
+      "name": "core",
+      "type": "core",
+      "url": "https://github.com/wackamole0/rainmaker-salt-core.git",
+      "branch": "master"
+    },
+    {
+      "name": "rainmaker/default-project",
+      "type": "project",
+      "url": "https://github.com/wackamole0/rainmaker-default-project-profile.git",
+      "branch": "master"
+    },
+    {
+      "name": "rainmaker/default-branch",
+      "type": "branch",
+      "url": "https://github.com/wackamole0/rainmaker-default-branch-profile.git",
+      "branch": "master"
+    },
+    {
+      "name": "rainmaker/drupal-classic",
+      "type": "branch",
+      "url": "https://github.com/wackamole0/rainmaker-drupal-classic-profile.git",
+      "branch": "master"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "defaultproject",
+      "profile": "rainmaker/default-project",
+      "version": "v1.0",
+      "environment": "base"
+    },
+    {
+      "id": "defaultbranch",
+      "profile": "rainmaker/default-branch",
+      "version": "v1.0",
+      "environment": "base"
+    },
+    {
+      "id": "drupalclassic",
+      "profile": "rainmaker/drupal-classic",
+      "version": "v1.0",
+      "environment": "base"
+    }
+  ]
+}
