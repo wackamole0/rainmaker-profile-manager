@@ -113,6 +113,18 @@ class MasterManifest
         return $this;
     }
 
+    public function persist($filename = null)
+    {
+        if (!empty($filename)) {
+            $this->manifestFilename = $filename;
+        }
+
+        $content = json_encode($this->data, JSON_PRETTY_PRINT);
+        $this->getFilesystem()->putFileContents($this->manifestFilename, $content);
+
+        return $this;
+    }
+
     public function install()
     {
         foreach ($this->getProfilesMetaData() as $profileMeta) {
@@ -173,6 +185,7 @@ class MasterManifest
             ->install();
 
         $this->addProfileToManifest($profile, $url);
+        $this->persist();
 
         if ($activate) {
             $profile->enable();
@@ -196,6 +209,7 @@ class MasterManifest
         }
 
         $this->removeProfileFromManifest($profile);
+        $this->persist();
 
         return $this;
     }
@@ -389,6 +403,7 @@ class MasterManifest
         $pillarTopFile->save();
 
         $this->addNodeToManifest($node);
+        $this->persist();
 
         return $node;
     }
@@ -410,6 +425,7 @@ class MasterManifest
         $pillarTopFile->save();
 
         $this->removeNodeFromManifest($node);
+        $this->persist();
 
         return $node;
     }

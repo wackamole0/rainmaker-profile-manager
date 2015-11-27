@@ -68,12 +68,12 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
-     * Test installing a new profile.
+     * Test installing a new branch profile.
      */
-    public function testInstallNewProfile()
+    public function testInstallNewBranchProfile()
     {
         $this->createMockMasterManifestInstallation();
-        $this->installMockProfile();
+        $this->installMockBranchProfile();
 
         // Check the profile is installed on the filesystem correctly.
         $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/.git'));
@@ -83,15 +83,19 @@ class CreateTest extends AbstractUnitTest
 
         // Check here that the profile has been added to the master manifest.
         $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
     }
 
     /**
-     * Test installing a new profile to empty manifest.
+     * Test installing a new core profile to empty manifest.
      */
-    public function testInstallNewProfileToEmptyManifest()
+    public function testInstallNewCoreProfileToEmptyManifest()
     {
         //$this->createMockMasterManifestInstallation();
-        $this->installMockProfile();
+        $this->installMockCoreProfile();
 
         // Check the profile is installed on the filesystem correctly.
         $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/.git'));
@@ -101,15 +105,41 @@ class CreateTest extends AbstractUnitTest
 
         // Check here that the profile has been added to the master manifest.
         $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
     }
 
     /**
-     * Test uninstalling an existing profile.
+     * Test installing a new branch profile to empty manifest.
+     */
+    public function testInstallNewBranchProfileToEmptyManifest()
+    {
+        //$this->createMockMasterManifestInstallation();
+        $this->installMockBranchProfile();
+
+        // Check the profile is installed on the filesystem correctly.
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/.git'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/manifest.json'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getSaltStateTreeSymlinkFullPath()));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getPillarDataTreeSymlinkFullPath()));
+
+        // Check here that the profile has been added to the master manifest.
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+    }
+
+    /**
+     * Test uninstalling an existing branch profile.
      */
     public function testUninstallExistingProfile()
     {
         $this->createMockMasterManifestInstallation();
-        $this->installMockProfile();
+        $this->installMockBranchProfile();
 
         $this->masterManifest->removeProfileByName($this->profile->getName());
 
@@ -119,6 +149,11 @@ class CreateTest extends AbstractUnitTest
         $this->assertFalse($this->filesystemMock->exists($this->profile->getFullPath()));
 
         // Check here that the profile has been removed from the master manifest.
+        $this->assertFalse($this->masterManifest->profileWithUrlPresent($this->profileUrl));
+        $this->assertFalse($this->masterManifest->profileWithUrlPresent($this->profile->getName()));
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
         $this->assertFalse($this->masterManifest->profileWithUrlPresent($this->profileUrl));
         $this->assertFalse($this->masterManifest->profileWithUrlPresent($this->profile->getName()));
     }
@@ -133,11 +168,17 @@ class CreateTest extends AbstractUnitTest
         $profile = $this->masterManifest->getProfile('rainmaker/default-project');
         $node = $this->masterManifest->addNode('testnode', $profile->getName(), '1.0');
 
+        $this->assertTrue($this->masterManifest->nodeWithIdPresent('testnode'));
+
         $saltYaml = Yaml::parse($this->filesystemMock->getFileContents($this->masterManifest->getSaltStateTopFileFullPath()));
         $pillarYaml = Yaml::parse($this->filesystemMock->getFileContents($this->masterManifest->getPillarDataTopFileFullPath()));
 
         $this->assertEquals(array($profile->getSaltTopFileRelativePath('1.0')), $saltYaml['base'][$node->getId()]);
         $this->assertEquals(array($profile->getPillarTopFileRelativePath('1.0')), $pillarYaml['base'][$node->getId()]);
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertTrue($this->masterManifest->nodeWithIdPresent('testnode'));
     }
 
     /**
@@ -158,11 +199,17 @@ class CreateTest extends AbstractUnitTest
 
         $this->masterManifest->removeNode('testnode');
 
+        $this->assertFalse($this->masterManifest->nodeWithIdPresent('testnode'));
+
         $saltYaml = Yaml::parse($this->filesystemMock->getFileContents($this->masterManifest->getSaltStateTopFileFullPath()));
         $pillarYaml = Yaml::parse($this->filesystemMock->getFileContents($this->masterManifest->getPillarDataTopFileFullPath()));
 
         $this->assertArrayNotHasKey($node->getId(), $saltYaml['base']);
         $this->assertArrayNotHasKey($node->getId(), $pillarYaml['base']);
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertFalse($this->masterManifest->nodeWithIdPresent('testnode'));
     }
 
     /**
@@ -279,6 +326,20 @@ class CreateTest extends AbstractUnitTest
         return $fs;
     }
 
+    protected function loadMasterManifest()
+    {
+        if (empty($this->filesystemMock)) {
+            $this->filesystemMock = $this->createFilesystemMock();
+        }
+
+        $this->masterManifest = new MasterManifest();
+        $this->masterManifest
+            ->setFilesystem($this->filesystemMock)
+            ->load();
+
+        return $this->masterManifest;
+    }
+
     protected function createMockMasterManifestInstallation()
     {
         if (empty($this->filesystemMock)) {
@@ -347,15 +408,48 @@ class CreateTest extends AbstractUnitTest
         GitRepoMock::$profilesRepo['https://github.com/wackamole0/rainmaker-drupal-classic-profile.git'] = json_encode($profileManifest, JSON_PRETTY_PRINT);
 
         if (empty($this->masterManifest)) {
+            $this->masterManifest = $this->loadMasterManifest();
+        }
+        $this->masterManifest->install();
+    }
+
+    protected function installMockCoreProfile()
+    {
+        if (empty($this->filesystemMock)) {
+            $this->filesystemMock = $this->createFilesystemMock();
+        }
+
+        GitRepo::$processRunnerClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\ProcessRunnerMock';
+        ProfileInstaller::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock';
+
+        GitRepoMock::$profilesRepo = array();
+
+        $this->profileUrl = 'https://github.com/wackamole0/rainmaker-symfony2.git';
+
+        $this->profileManifest = $this->generateMockProfileManifest(array(
+            'type' => 'core',
+            'name' => 'core',
+            'profiles' => array(
+                array(
+                    'version' => '1.0'
+                )
+            )
+        ));
+        GitRepoMock::$profilesRepo[$this->profileUrl] = json_encode($this->profileManifest, JSON_PRETTY_PRINT);
+
+        if (empty($this->masterManifest)) {
             $this->masterManifest = new MasterManifest();
             $this->masterManifest
                 ->setFilesystem($this->filesystemMock)
                 ->load();
         }
-        $this->masterManifest->install();
+
+        $this->profile = $this->masterManifest
+            ->setFilesystem($this->filesystemMock)
+            ->installProfileFromUrl($this->profileUrl);
     }
 
-    protected function installMockProfile()
+    protected function installMockBranchProfile()
     {
         if (empty($this->filesystemMock)) {
             $this->filesystemMock = $this->createFilesystemMock();
@@ -380,10 +474,7 @@ class CreateTest extends AbstractUnitTest
         GitRepoMock::$profilesRepo[$this->profileUrl] = json_encode($this->profileManifest, JSON_PRETTY_PRINT);
 
         if (empty($this->masterManifest)) {
-            $this->masterManifest = new MasterManifest();
-            $this->masterManifest
-                ->setFilesystem($this->filesystemMock)
-                ->load();
+            $this->masterManifest = $this->loadMasterManifest();
         }
 
         $this->profile = $this->masterManifest
@@ -415,10 +506,7 @@ class CreateTest extends AbstractUnitTest
         }
 
         if (empty($this->masterManifest)) {
-            $this->masterManifest = new MasterManifest();
-            $this->masterManifest
-                ->setFilesystem($this->filesystemMock)
-                ->load();
+            $this->masterManifest = $this->loadMasterManifest();
         }
 
         $projectProfileCachePath = implode(DIRECTORY_SEPARATOR, array(
