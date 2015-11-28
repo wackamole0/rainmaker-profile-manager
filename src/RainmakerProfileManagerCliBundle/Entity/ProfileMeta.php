@@ -10,7 +10,7 @@ class ProfileMeta
     protected $name = '';
     protected $type = '';
     protected $url = '';
-    protected $branch = '';
+    protected $branch = 'master';
 
     public function getName()
     {

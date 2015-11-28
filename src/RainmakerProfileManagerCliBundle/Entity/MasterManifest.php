@@ -160,7 +160,7 @@ class MasterManifest
     protected function installProfile(ProfileMeta $profileMeta)
     {
         $class = static::$profileInstallerClass;
-        $profileInstaller = new $class($profileMeta->getUrl(), static::$profilesLocationBasePath);
+        $profileInstaller = new $class($profileMeta->getUrl(), static::$profilesLocationBasePath, $profileMeta->getBranch());
         $profile = $profileInstaller
             ->setFilesystem($this->getFilesystem())
             ->download()
@@ -184,7 +184,7 @@ class MasterManifest
             ->verify()
             ->install();
 
-        $this->addProfileToManifest($profile, $url);
+        $this->addProfileToManifest($profile, $url, $branch);
         $this->persist();
 
         if ($activate) {
@@ -219,10 +219,10 @@ class MasterManifest
         return $this->getFilesystem()->exists($this->profileManifestFullPath($profileMeta));
     }
 
-    public function profileWithUrlPresent($url)
+    public function profileWithUrlPresent($url, $branch = 'master')
     {
         foreach ($this->getProfilesMetaData() as $profileMeta) {
-            if ($profileMeta->getUrl() == $url) {
+            if ($profileMeta->getUrl() == $url && $profileMeta->getBranch() == $branch) {
                 return true;
             }
         }
@@ -241,6 +241,7 @@ class MasterManifest
         return false;
     }
 
+    //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     protected function profileFullPath(ProfileMeta $profileMeta)
     {
         $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
@@ -249,12 +250,13 @@ class MasterManifest
         }
 
         if ('core' != $profileMeta->getType()) {
-            $pathParts[] = $profileMeta->getName();
+            $pathParts[] = $profileMeta->getName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
     }
 
+    //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     protected function profileManifestFullPath(ProfileMeta $profileMeta)
     {
         $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
@@ -263,7 +265,7 @@ class MasterManifest
         }
 
         if ('core' != $profileMeta->getType()) {
-            $pathParts[] = $profileMeta->getName();
+            $pathParts[] = $profileMeta->getName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
         }
 
         $pathParts[] = static::$profileManifestBaseName;

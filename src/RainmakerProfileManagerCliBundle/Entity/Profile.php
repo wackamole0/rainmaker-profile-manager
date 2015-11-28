@@ -20,6 +20,7 @@ class Profile
     protected $filesystem = null;
     protected $path = null;
     protected $url = null;
+    protected $branch = null;
 
     /**
      * @var \RainmakerProfileManagerCliBundle\Util\GitRepo
@@ -28,7 +29,7 @@ class Profile
 
     protected $manifest = null;
 
-    public function __construct($path, $url)
+    public function __construct($path, $url, $branch = 'master')
     {
         if (is_null(static::$gitRepoClass)) {
             static::$gitRepoClass = '\RainmakerProfileManagerCliBundle\Util\GitRepo';
@@ -40,8 +41,9 @@ class Profile
 
         $this->path = $path;
         $this->url = $url;
+        $this->branch = $branch;
         $class = static::$gitRepoClass;
-        $this->repo = new $class($path, $url);
+        $this->repo = new $class($path, $url, $branch);
     }
 
     public function getFilesystem()
@@ -84,6 +86,7 @@ class Profile
         return $this->getFullPath() . DIRECTORY_SEPARATOR . static::$profileManifestBaseName;
     }
 
+    //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     public function getSaltStateTreeSymlinkFullPath($env = 'base')
     {
         $pathParts = array(static::$saltStateTreeBasePath, $env, 'rainmaker', $this->getManifest()->type);
@@ -93,7 +96,7 @@ class Profile
         }
 
         if ('core' != $this->getManifest()->type) {
-            $pathParts[] = $this->getManifest()->name;
+            $pathParts[] = $this->getManifest()->name . ($this->branch != 'master' ? '-' . $this->branch : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
@@ -104,6 +107,7 @@ class Profile
         return $this->getFullPath() . DIRECTORY_SEPARATOR . 'salt';
     }
 
+    //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     public function getPillarDataTreeSymlinkFullPath($env = 'base')
     {
         $pathParts = array(static::$pillarDataTreeBasePath, $env, 'rainmaker', $this->getManifest()->type);
@@ -113,7 +117,7 @@ class Profile
         }
 
         if ('core' != $this->getManifest()->type) {
-          $pathParts[] = $this->getManifest()->name;
+          $pathParts[] = $this->getManifest()->name . ($this->branch != 'master' ? '-' . $this->branch : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
@@ -157,6 +161,7 @@ class Profile
         return true;
     }
 
+    //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     public function installPath($basePath = null)
     {
         $pathParts = array(
@@ -169,7 +174,7 @@ class Profile
         }
 
         if ('core' != $this->getManifest()->type) {
-            $pathParts[] = $this->getManifest()->name;
+            $pathParts[] = $this->getManifest()->name . ($this->branch != 'master' ? '-' . $this->branch : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
@@ -251,7 +256,7 @@ class Profile
 
         $path_parts = array('rainmaker', $this->getType());
         if ('core' != $this->getType()) {
-            $path_parts[] = $this->getName();
+            $path_parts[] = $this->getName() . ($this->branch != 'master' ? '-' . $this->branch : '');
         }
 
         $path_parts[] = 'v' . str_replace('.', '_', $version);

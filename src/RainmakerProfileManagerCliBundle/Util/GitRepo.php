@@ -37,7 +37,7 @@ class GitRepo
         return $repo;
     }
 
-    public function __construct($path, $url)
+    public function __construct($path, $url, $branch = 'master')
     {
         if (is_null(static::$processRunnerClass)) {
             static::$processRunnerClass = '\RainmakerProfileManagerCliBundle\Process\ProcessRunner';
@@ -45,6 +45,7 @@ class GitRepo
 
         $this->path = $path;
         $this->url = $url;
+        $this->branch = $branch;
     }
 
     public function getFilesystem()
@@ -82,7 +83,7 @@ class GitRepo
         $this->url = $url;
         $this->branch = $branch;
 
-        $process = new GitCloneProcess($url, $this->getPath());
+        $process = new GitCloneProcess($url, $this->getPath(), $branch);
         $process->mustRun();
     }
 

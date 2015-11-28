@@ -12,9 +12,9 @@ use Symfony\Component\Process\Process;
  */
 class GitCloneProcess extends Process {
 
-    public function __construct($url, $path)
+    public function __construct($url, $path, $branch = 'master')
     {
-        parent::__construct('git clone ' . $url . ' . ', $path);
+        parent::__construct("git clone --branch $branch " . $url . ' . ', $path);
     }
 
 }

@@ -90,6 +90,29 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
+     * Test installing a new branch profile in repository dev branch.
+     */
+    public function testInstallNewBranchInRepoDevBranchProfile()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->installMockBranchProfile('dev');
+
+        // Check the profile is installed on the filesystem correctly.
+        $this->assertEquals('/srv/saltstack/profiles/branch/wackamole0/symfony2-dev', $this->profile->getFullPath());
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/.git'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getFullPath() . '/manifest.json'));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getSaltStateTreeSymlinkFullPath()));
+        $this->assertTrue($this->filesystemMock->exists($this->profile->getPillarDataTreeSymlinkFullPath()));
+
+        // Check here that the profile has been added to the master manifest.
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl, 'dev'));
+
+        // Reload manifest and test for profile to ensure profile changes were persisted correctly.
+        $this->masterManifest = $this->loadMasterManifest();
+        $this->assertTrue($this->masterManifest->profileWithUrlPresent($this->profileUrl, 'dev'));
+    }
+
+    /**
      * Test installing a new core profile to empty manifest.
      */
     public function testInstallNewCoreProfileToEmptyManifest()
@@ -449,7 +472,7 @@ class CreateTest extends AbstractUnitTest
             ->installProfileFromUrl($this->profileUrl);
     }
 
-    protected function installMockBranchProfile()
+    protected function installMockBranchProfile($branch = 'master')
     {
         if (empty($this->filesystemMock)) {
             $this->filesystemMock = $this->createFilesystemMock();
@@ -479,7 +502,7 @@ class CreateTest extends AbstractUnitTest
 
         $this->profile = $this->masterManifest
             ->setFilesystem($this->filesystemMock)
-            ->installProfileFromUrl($this->profileUrl);
+            ->installProfileFromUrl($this->profileUrl, true, $branch);
     }
 
     protected function generateMockProfileManifest($manifestData)
