@@ -27,7 +27,7 @@ class Application extends ParentApplication
     {
         parent::__construct($kernel);
 
-        $this->setName('Rainmaker CLI');
+        $this->setName('Rainmaker Profile Manager CLI');
         $this->setVersion('1.x-dev');
 
         $this->setDefaultTimezone();

@@ -1,5 +1,5 @@
-Profile                        Type                          Status
-core                           core                      Up-to-date
-rainmaker/default-project      project             Update available
-rainmaker/default-branch       branch              Update available
-rainmaker/drupal-classic       branch                    Up-to-date
+Profile                        Type            Branch                        Status
+core                           core            master                    Up-to-date
+rainmaker/default-project      project         master              Update available
+rainmaker/default-branch       branch          master              Update available
+rainmaker/drupal-classic       branch          master                    Up-to-date

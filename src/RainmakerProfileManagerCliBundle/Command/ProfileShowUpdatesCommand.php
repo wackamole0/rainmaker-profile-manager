@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
-use RainmakerProfileManagerCliBundle\Helper\ProfileHelper;
+use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 
 class ProfileShowUpdatesCommand extends Command
 {
@@ -22,7 +22,11 @@ class ProfileShowUpdatesCommand extends Command
 
   protected function execute(InputInterface $input, OutputInterface $output)
   {
-    $output->writeln(ProfileHelper::ShowAvailableProfileUpdates());
+    $masterManifest = new MasterManifest();
+    $text = $masterManifest
+        ->load()
+        ->showAvailableUpdates();
+    $output->writeln($text);
   }
 
 }

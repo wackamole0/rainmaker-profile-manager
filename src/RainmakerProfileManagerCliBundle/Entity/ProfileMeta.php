@@ -8,6 +8,7 @@ namespace RainmakerProfileManagerCliBundle\Entity;
 class ProfileMeta
 {
     protected $name = '';
+    protected $profileName = '';
     protected $type = '';
     protected $url = '';
     protected $branch = 'master';
@@ -15,6 +16,11 @@ class ProfileMeta
     public function getName()
     {
         return $this->name;
+    }
+
+    public function getProfileName()
+    {
+        return $this->profileName;
     }
 
     public function getType()
@@ -34,7 +40,7 @@ class ProfileMeta
 
     public function populate($metaData)
     {
-        foreach (array('name', 'type', 'url', 'branch') as $attr) {
+        foreach (array('name', 'profileName', 'type', 'url', 'branch') as $attr) {
             $this->$attr = (!empty($metaData->$attr) ? $metaData->$attr : '');
         }
     }

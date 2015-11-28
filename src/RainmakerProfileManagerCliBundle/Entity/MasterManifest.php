@@ -95,7 +95,7 @@ class MasterManifest
 
     protected function loadProfileFromMeta(ProfileMeta $profileMeta)
     {
-        $profile = new Profile($this->profileFullPath($profileMeta), $profileMeta->getUrl());
+        $profile = new Profile($this->profileFullPath($profileMeta), $profileMeta->getUrl(), $profileMeta->getBranch());
         $profile->setFilesystem($this->getFilesystem());
         return $profile;
     }
@@ -160,7 +160,15 @@ class MasterManifest
     protected function installProfile(ProfileMeta $profileMeta)
     {
         $class = static::$profileInstallerClass;
+
+        /**
+         * @var ProfileInstaller $profileInstaller
+         */
         $profileInstaller = new $class($profileMeta->getUrl(), static::$profilesLocationBasePath, $profileMeta->getBranch());
+
+        /**
+         * @var Profile $profile
+         */
         $profile = $profileInstaller
             ->setFilesystem($this->getFilesystem())
             ->download()
@@ -177,7 +185,15 @@ class MasterManifest
     public function installProfileFromUrl($url, $activate = true, $branch = 'master')
     {
         $class = static::$profileInstallerClass;
+
+        /**
+         * @var ProfileInstaller $profileInstaller
+         */
         $profileInstaller = new $class($url, static::$profilesLocationBasePath, $branch);
+
+        /**
+         * @var Profile $profile
+         */
         $profile = $profileInstaller
             ->setFilesystem($this->getFilesystem())
             ->download()
@@ -250,7 +266,7 @@ class MasterManifest
         }
 
         if ('core' != $profileMeta->getType()) {
-            $pathParts[] = $profileMeta->getName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
+            $pathParts[] = $profileMeta->getProfileName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
@@ -259,24 +275,26 @@ class MasterManifest
     //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     protected function profileManifestFullPath(ProfileMeta $profileMeta)
     {
-        $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
-        if (!in_array($profileMeta->getType(), array('core', 'project', 'branch'))) {
-            throw new \RuntimeException('Profile type "' . $profileMeta->getType() . '" is not valid');
-        }
-
-        if ('core' != $profileMeta->getType()) {
-            $pathParts[] = $profileMeta->getName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
-        }
-
-        $pathParts[] = static::$profileManifestBaseName;
-
-        return implode(DIRECTORY_SEPARATOR, $pathParts);
+//        $pathParts = array(static::$profilesLocationBasePath, $profileMeta->getType());
+//        if (!in_array($profileMeta->getType(), array('core', 'project', 'branch'))) {
+//            throw new \RuntimeException('Profile type "' . $profileMeta->getType() . '" is not valid');
+//        }
+//
+//        if ('core' != $profileMeta->getType()) {
+//            $pathParts[] = $profileMeta->getName() . ($profileMeta->getBranch() != 'master' ? '-' . $profileMeta->getBranch() : '');
+//        }
+//
+//        $pathParts[] = static::$profileManifestBaseName;
+//
+//        return implode(DIRECTORY_SEPARATOR, $pathParts);
+        return $this->profileFullPath($profileMeta) . DIRECTORY_SEPARATOR . static::$profileManifestBaseName;
     }
 
     protected function addProfileToManifest(Profile $profile, $url, $branch = 'master')
     {
         $metadata = new \stdClass();
-        $metadata->name = $profile->getName();
+        $metadata->name = $profile->getName() . ($profile->getBranch() != 'master' ? '-' . $profile->getBranch() : '');
+        $metadata->profileName = $profile->getName();
         $metadata->type = $profile->getType();
         $metadata->branch = $branch;
         $metadata->url = $url;
@@ -529,11 +547,13 @@ class MasterManifest
 
         $output = str_pad('Profile', 30) .
             ' ' . str_pad('Type', 15)  .
+            ' ' . str_pad('Branch', 15)  .
             ' ' . str_pad('Status', 20, ' ', STR_PAD_LEFT) . "\n";
         foreach ($profiles as $profile) {
             $hasUpdates = $profile->hasAvailableUpdates();
             $output .= str_pad($profile->getName(), 30) .
                 ' ' . str_pad($profile->getType(), 15) .
+                ' ' . str_pad($profile->getBranch(), 15) .
                 ' ' . str_pad(($hasUpdates ? 'Update available' : 'Up-to-date'), 20, ' ', STR_PAD_LEFT) . "\n";
         }
 

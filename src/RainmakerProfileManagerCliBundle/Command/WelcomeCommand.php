@@ -31,7 +31,7 @@ class WelcomeCommand extends Command
   protected function execute(InputInterface $input, OutputInterface $output)
   {
     $output->writeln("Welcome to the Rainmaker Profile Manager!");
-    $output->writeln("Type <info>rainmaker list</info> to see all available commands.");
+    $output->writeln("Type <info>rprofmgr list</info> to see all available commands.");
   }
 
 }

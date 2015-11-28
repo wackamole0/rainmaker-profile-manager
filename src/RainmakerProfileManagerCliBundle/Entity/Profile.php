@@ -76,6 +76,11 @@ class Profile
         return $this->url;
     }
 
+    public function getBranch()
+    {
+        return $this->branch;
+    }
+
     public function getFullPath()
     {
         return $this->path;
@@ -96,7 +101,7 @@ class Profile
         }
 
         if ('core' != $this->getManifest()->type) {
-            $pathParts[] = $this->getManifest()->name . ($this->branch != 'master' ? '-' . $this->branch : '');
+            $pathParts[] = $this->getManifest()->name . ($this->getBranch() != 'master' ? '-' . $this->getBranch() : '');
         }
 
         return implode(DIRECTORY_SEPARATOR, $pathParts);
