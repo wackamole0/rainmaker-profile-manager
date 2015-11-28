@@ -21,6 +21,7 @@ class Profile
     protected $path = null;
     protected $url = null;
     protected $branch = null;
+    protected $masterAlias = '';
 
     /**
      * @var \RainmakerProfileManagerCliBundle\Util\GitRepo
@@ -79,6 +80,16 @@ class Profile
     public function getBranch()
     {
         return $this->branch;
+    }
+
+    public function getMasterAlias()
+    {
+        return $this->masterAlias;
+    }
+
+    public function setMasterAlias($alias)
+    {
+        $this->masterAlias = $alias;
     }
 
     public function getFullPath()

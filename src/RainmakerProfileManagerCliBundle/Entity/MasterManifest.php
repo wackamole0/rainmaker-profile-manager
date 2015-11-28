@@ -85,7 +85,7 @@ class MasterManifest
     public function getProfile($profileName)
     {
         foreach ($this->getProfiles() as $profile) {
-            if ($profile->getName() == $profileName) {
+            if ($profile->getMasterAlias() == $profileName) {
                 return $profile;
             }
         }
@@ -97,6 +97,7 @@ class MasterManifest
     {
         $profile = new Profile($this->profileFullPath($profileMeta), $profileMeta->getUrl(), $profileMeta->getBranch());
         $profile->setFilesystem($this->getFilesystem());
+        $profile->setMasterAlias($profileMeta->getName());
         return $profile;
     }
 
@@ -174,6 +175,7 @@ class MasterManifest
             ->download()
             ->verify()
             ->install();
+        $profile->setMasterAlias($profile->getMasterAlias());
 
         return $profile;
     }
@@ -292,8 +294,9 @@ class MasterManifest
 
     protected function addProfileToManifest(Profile $profile, $url, $branch = 'master')
     {
+        $profile->setMasterAlias($profile->getName() . ($profile->getBranch() != 'master' ? '-' . $profile->getBranch() : ''));
         $metadata = new \stdClass();
-        $metadata->name = $profile->getName() . ($profile->getBranch() != 'master' ? '-' . $profile->getBranch() : '');
+        $metadata->name = $profile->getMasterAlias();
         $metadata->profileName = $profile->getName();
         $metadata->type = $profile->getType();
         $metadata->branch = $branch;
@@ -308,7 +311,7 @@ class MasterManifest
     protected function removeProfileFromManifest(Profile $profile)
     {
         foreach ($this->data->profiles as $index => $profileInfo) {
-            if ($profile->getName() == $profileInfo->name) {
+            if ($profile->getMasterAlias() == $profileInfo->name) {
                 unset($this->data->profiles[$index]);
             }
         }
