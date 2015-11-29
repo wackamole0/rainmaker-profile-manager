@@ -74,6 +74,7 @@ class Application extends ParentApplication
         $commands[] = new Command\ProfileUpdateCommand();
         $commands[] = new Command\NodeAddCommand();
         $commands[] = new Command\NodeRemoveCommand();
+        $commands[] = new Command\NodeListCommand();
         return $commands;
     }
 

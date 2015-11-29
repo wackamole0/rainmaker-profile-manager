@@ -33,19 +33,19 @@
     {
       "id": "defaultproject",
       "profile": "rainmaker/default-project",
-      "version": "v1.0",
+      "version": "1.0",
       "environment": "base"
     },
     {
       "id": "defaultbranch",
       "profile": "rainmaker/default-branch",
-      "version": "v1.0",
+      "version": "1.0",
       "environment": "base"
     },
     {
       "id": "drupalclassic",
       "profile": "rainmaker/drupal-classic",
-      "version": "v1.0",
+      "version": "1.0",
       "environment": "base"
     }
   ]

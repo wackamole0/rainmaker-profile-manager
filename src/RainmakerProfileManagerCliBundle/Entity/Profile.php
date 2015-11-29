@@ -294,4 +294,38 @@ class Profile
     {
         $this->repo->update($fetchUpdates);
     }
+
+    public function getLatestVersion()
+    {
+        $versions = $this->getManifest()->profiles;
+        usort($versions, array($this, 'cmpProfileVersions'));
+        $latest = array_pop($versions);
+
+        return $latest->version;
+    }
+
+    protected function cmpProfileVersions($profileA, $profileB)
+    {
+        $profileAversionParts = explode('.', $profileA);
+        $profileBversionParts = explode('.', $profileB);
+
+        $a = min(count($profileAversionParts), count($profileBversionParts));
+        for ($i = 0; $i < $a; $i++) {
+            if ($profileAversionParts[$i] < $profileBversionParts[$i]) {
+                return -1;
+            }
+            elseif ($profileAversionParts[$i] < $profileBversionParts[$i]) {
+                return 1;
+            }
+        }
+
+        if (count($profileAversionParts) < count($profileBversionParts)) {
+            return -1;
+        }
+        elseif (count($profileAversionParts) > count($profileBversionParts)) {
+            return 1;
+        }
+
+        return 0;
+    }
 }

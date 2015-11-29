@@ -1,0 +1,10 @@
+Node                                     Profile                        Cur Vers   Latest Vers
+defaultbranch                            rainmaker/default-branch       1.0               1.0
+defaultproject                           rainmaker/default-project      1.0               1.0
+drupalclassic                            rainmaker/drupal-classic       1.0               1.0
+project1-branch1.localdev                rainmaker/default-branch       1.0               1.0
+project1-branch2.localdev                rainmaker/default-branch       1.0               1.0
+project1.localdev                        rainmaker/default-project      1.0               1.0
+project2-branch1.localdev                rainmaker/default-branch       1.0               1.0
+project2-branch2.localdev                rainmaker/default-branch       1.0               1.0
+project2.localdev                        rainmaker/default-project      1.0               1.0

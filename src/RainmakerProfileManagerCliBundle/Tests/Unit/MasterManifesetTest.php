@@ -236,6 +236,27 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
+     * Test listing nodes.
+     */
+    public function testListingNodes()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->masterManifest->addNode('project1.localdev', 'rainmaker/default-project', '1.0');
+        $this->masterManifest->addNode('project1-branch1.localdev', 'rainmaker/default-branch', '1.0');
+        $this->masterManifest->addNode('project1-branch2.localdev', 'rainmaker/default-branch', '1.0');
+        $this->masterManifest->addNode('project2.localdev', 'rainmaker/default-project', '1.0');
+        $this->masterManifest->addNode('project2-branch1.localdev', 'rainmaker/default-branch', '1.0');
+        $this->masterManifest->addNode('project2-branch2.localdev', 'rainmaker/default-branch', '1.0');
+
+        $output = $this->masterManifest->listNodes();
+
+        $this->assertEquals(
+            file_get_contents($this->getPathToTestAcceptanceFilesDirectory() . DIRECTORY_SEPARATOR . 'configuredNodesList'),
+            $output
+        );
+    }
+
+    /**
      * Test listing available profile updates.
      */
     public function testListingAvailableProfileUpdates()
