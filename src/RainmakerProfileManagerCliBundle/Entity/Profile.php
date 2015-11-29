@@ -246,7 +246,7 @@ class Profile
     public function hasVersion($version)
     {
         foreach ($this->getManifest()->profiles as $profileVersion) {
-            if ($profileVersion->version == $version) {
+            if ($profileVersion->version === $version) {
                 return true;
             }
         }

@@ -317,6 +317,42 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
+     * Test checking for installed profile.
+     */
+    public function testCheckingForInstalledProfile()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->assertTrue($this->masterManifest->hasInstalledProfileProfile('rainmaker/default-branch'));
+    }
+
+    /**
+     * Test checking for installed profile with specific profile version present.
+     */
+    public function testCheckingForInstalledProfileAtSpecificVersion()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->assertTrue($this->masterManifest->hasInstalledProfileProfile('rainmaker/default-branch', '1.0'));
+    }
+
+    /**
+     * Test checking for missing profile yields false.
+     */
+    public function testCheckingForMissingProfile()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->assertFalse($this->masterManifest->hasInstalledProfileProfile('wackamole/drupal-classic'));
+    }
+
+    /**
+     * Test checking for an installed profile with missing specific version yields false.
+     */
+    public function testCheckingForInstalledProfileWithMissingSpecificVersion()
+    {
+        $this->createMockMasterManifestInstallation();
+        $this->assertFalse($this->masterManifest->hasInstalledProfileProfile('rainmaker/default-branch', '2.0'));
+    }
+
+    /**
      * Test downloading rootfs of profile version.
      */
     public function testDownloadingRootfsOfProfileVersion()
@@ -514,7 +550,7 @@ class CreateTest extends AbstractUnitTest
         if (!empty($manifestData['profiles'])) {
             foreach ($manifestData['profiles'] as $profileVersionData) {
                 $profileVersion = new \stdClass();
-                $profileVersion->version = isset($profileVersionData['version']) ? isset($profileVersionData['version']) : '';
+                $profileVersion->version = isset($profileVersionData['version']) ? $profileVersionData['version'] : '';
                 $profileManifest->profiles[] = $profileVersion;
             }
         }

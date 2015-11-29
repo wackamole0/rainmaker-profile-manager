@@ -39,10 +39,10 @@ class ProfileRemoveCommand extends Command
             }
         }
 
-      $masterManifest = new MasterManifest();
-      $masterManifest
-          ->load()
-          ->removeProfileByName($profileName);
+        $masterManifest = new MasterManifest();
+        $masterManifest
+            ->load()
+            ->removeProfileByName($profileName);
     }
 
     protected function askForProfileName(InputInterface $input, OutputInterface $output)

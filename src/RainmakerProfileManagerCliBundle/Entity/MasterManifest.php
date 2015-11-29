@@ -259,6 +259,16 @@ class MasterManifest
         return false;
     }
 
+    public function hasInstalledProfileProfile($profileName, $version = null)
+    {
+        $profile = $this->getProfile($profileName);
+        if (!empty($profile)) {
+            return !empty($version) ? $profile->hasVersion($version) : true;
+        }
+
+        return false;
+    }
+
     //@todo-refactor Should profile path resolution logic be pulled out into a helper class rather than being replicated in several different classes?
     protected function profileFullPath(ProfileMeta $profileMeta)
     {

@@ -13,20 +13,20 @@ use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 class ProfileShowUpdatesCommand extends Command
 {
 
-  protected function configure()
-  {
-    $this
-      ->setName('profile:show-updates')
-      ->setDescription('List profiles and show if updates are available');
-  }
+    protected function configure()
+    {
+        $this
+            ->setName('profile:show-updates')
+            ->setDescription('List profiles and show if updates are available');
+    }
 
-  protected function execute(InputInterface $input, OutputInterface $output)
-  {
-    $masterManifest = new MasterManifest();
-    $text = $masterManifest
-        ->load()
-        ->showAvailableUpdates();
-    $output->writeln($text);
-  }
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $masterManifest = new MasterManifest();
+        $text = $masterManifest
+            ->load()
+            ->showAvailableUpdates();
+        $output->writeln($text);
+    }
 
 }
