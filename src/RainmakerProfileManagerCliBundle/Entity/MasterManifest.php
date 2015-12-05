@@ -186,6 +186,11 @@ class MasterManifest
      */
     public function installProfileFromUrl($url, $activate = true, $branch = 'master')
     {
+        if ($this->profileWithUrlPresent($url, $branch)) {
+            //@todo May throw an exception here?
+            return;
+        }
+
         $class = static::$profileInstallerClass;
 
         /**
