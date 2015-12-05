@@ -304,7 +304,7 @@ class MasterManifest
 
     protected function addProfileToManifest(Profile $profile, $url, $branch = 'master')
     {
-        $profile->setMasterAlias($profile->getName() . ($profile->getBranch() != 'master' ? '-' . $profile->getBranch() : ''));
+        $profile->setMasterAlias($profile->getName() . ('core' != $profile->getType() && $profile->getBranch() != 'master' ? '-' . $profile->getBranch() : ''));
         $metadata = new \stdClass();
         $metadata->name = $profile->getMasterAlias();
         $metadata->profileName = $profile->getName();
