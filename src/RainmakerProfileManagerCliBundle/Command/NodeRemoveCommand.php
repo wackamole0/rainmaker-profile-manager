@@ -2,15 +2,15 @@
 
 namespace RainmakerProfileManagerCliBundle\Command;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 
-class NodeRemoveCommand extends Command
+class NodeRemoveCommand extends BaseCommand
 {
 
     protected function configure()
@@ -22,6 +22,12 @@ class NodeRemoveCommand extends Command
                 'node',
                 InputArgument::OPTIONAL,
                 'The unique Salt minion id'
+            )
+            ->addOption(
+                'salt-environment',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'The Saltstack environment'
             );
     }
 
@@ -41,13 +47,7 @@ class NodeRemoveCommand extends Command
         $masterManifest = new MasterManifest();
         $masterManifest
             ->load()
-            ->removeNode($minionId);
-    }
-
-    protected function askForNodeMinionId(InputInterface $input, OutputInterface $output)
-    {
-        $text = 'Enter the Salt minion id: ';
-        return $this->getHelper('question')->ask($input, $output, new Question($text));
+            ->removeNode($minionId, $this->getSaltStackEnvironment($input));
     }
 
 }

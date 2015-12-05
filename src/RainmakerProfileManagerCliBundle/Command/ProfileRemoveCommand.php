@@ -2,7 +2,6 @@
 
 namespace RainmakerProfileManagerCliBundle\Command;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
@@ -11,7 +10,7 @@ use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 
-class ProfileRemoveCommand extends Command
+class ProfileRemoveCommand extends BaseCommand
 {
 
     protected function configure()
@@ -31,7 +30,7 @@ class ProfileRemoveCommand extends Command
         $profileName = $input->getArgument('name');
         if (empty($profileName)) {
             if ($input->isInteractive()) {
-                $profileName = $this->askForProfileName($input, $output);
+                $profileName = $this->askForProfileNameToRemove($input, $output);
             }
             else {
                 $output->writeln("<error>You must specify the name of the profile you wish to remove.</error>");
@@ -43,12 +42,6 @@ class ProfileRemoveCommand extends Command
         $masterManifest
             ->load()
             ->removeProfileByName($profileName);
-    }
-
-    protected function askForProfileName(InputInterface $input, OutputInterface $output)
-    {
-        $text = 'Enter the name of the profile to update: ';
-        return $this->getHelper('question')->ask($input, $output, new Question($text));
     }
 
 }

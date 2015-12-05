@@ -2,15 +2,15 @@
 
 namespace RainmakerProfileManagerCliBundle\Command;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 
-class NodeAddCommand extends Command
+class NodeAddCommand extends BaseCommand
 {
 
     protected function configure()
@@ -32,6 +32,12 @@ class NodeAddCommand extends Command
                 'profile-version',
                 InputArgument::OPTIONAL,
                 'The version of the profile'
+            )
+            ->addOption(
+                'salt-environment',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'The Saltstack environment'
             );
     }
 
@@ -73,25 +79,7 @@ class NodeAddCommand extends Command
       $masterManifest = new MasterManifest();
       $masterManifest
           ->load()
-          ->addNode($minionId, $profile, $version);
-    }
-
-    protected function askForNodeMinionId(InputInterface $input, OutputInterface $output)
-    {
-        $text = 'Enter the Salt minion id: ';
-        return $this->getHelper('question')->ask($input, $output, new Question($text));
-    }
-
-    protected function askForProfileName(InputInterface $input, OutputInterface $output)
-    {
-        $text = 'Enter the profile name: ';
-        return $this->getHelper('question')->ask($input, $output, new Question($text));
-    }
-
-    protected function askForProfileVersion(InputInterface $input, OutputInterface $output)
-    {
-        $text = 'Enter the profile version: ';
-        return $this->getHelper('question')->ask($input, $output, new Question($text));
+          ->addNode($minionId, $profile, $version, $this->getSaltStackEnvironment($input));
     }
 
 }

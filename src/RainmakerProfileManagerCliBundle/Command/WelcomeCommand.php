@@ -2,12 +2,11 @@
 
 namespace RainmakerProfileManagerCliBundle\Command;
 
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class WelcomeCommand extends Command
+class WelcomeCommand extends BaseCommand
 {
 
     protected function configure()

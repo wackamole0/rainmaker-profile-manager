@@ -391,10 +391,10 @@ class MasterManifest
         return null;
     }
 
-    public function nodeWithIdPresent($id)
+    public function nodeWithIdPresent($id, $environment = 'base')
     {
         foreach ($this->getNodes() as $node) {
-            if ($node->getId() == $id) {
+            if ($node->getId() == $id && $node->getEnvironment() == $environment) {
                 return true;
             }
         }
@@ -404,7 +404,7 @@ class MasterManifest
 
     public function addNode($id, $profileName, $profileVersion, $environment = 'base')
     {
-        if ($this->nodeWithIdPresent($id)) {
+        if ($this->nodeWithIdPresent($id, $environment)) {
             throw new \RuntimeException("Node '$id' already exists");
         }
 
@@ -427,11 +427,11 @@ class MasterManifest
         $node = new Node();
         $node->populate($nodeMeta);
 
-        $saltTopFile = $this->getSaltTopFile();
+        $saltTopFile = $this->getSaltTopFile($environment);
         $saltTopFile->addOrUpdate($node);
         $saltTopFile->save();
 
-        $pillarTopFile = $this->getPillarTopFile();
+        $pillarTopFile = $this->getPillarTopFile($environment);
         $pillarTopFile->addOrUpdate($node);
         $pillarTopFile->save();
 
@@ -441,19 +441,19 @@ class MasterManifest
         return $node;
     }
 
-    public function removeNode($id)
+    public function removeNode($id, $environment = 'base')
     {
-        if (!$this->nodeWithIdPresent($id)) {
+        if (!$this->nodeWithIdPresent($id, $environment)) {
             throw new \RuntimeException("Node '$id' does not exist");
         }
 
         $node = $this->getNode($id);
 
-        $saltTopFile = $this->getSaltTopFile();
+        $saltTopFile = $this->getSaltTopFile($environment);
         $saltTopFile->remove($node);
         $saltTopFile->save();
 
-        $pillarTopFile = $this->getPillarTopFile();
+        $pillarTopFile = $this->getPillarTopFile($environment);
         $pillarTopFile->remove($node);
         $pillarTopFile->save();
 
@@ -476,7 +476,7 @@ class MasterManifest
     protected function removeNodeFromManifest(Node $node)
     {
         foreach ($this->data->nodes as $index => $nodeInfo) {
-            if ($node->getId() == $nodeInfo->id) {
+            if ($node->getId() == $nodeInfo->id && $node->getEnvironment() == $nodeInfo->environment) {
                 unset($this->data->nodes[$index]);
             }
         }
@@ -496,22 +496,22 @@ class MasterManifest
         return strcmp($node1->id, $node2->id);
     }
 
-    protected function getSaltTopFile()
+    protected function getSaltTopFile($env = 'base')
     {
         $saltTopFile = new SaltTopFile();
         $saltTopFile
             ->setFilesystem($this->getFilesystem())
-            ->load($this->getSaltStateTopFileFullPath());
+            ->load($this->getSaltStateTopFileFullPath($env));
 
         return $saltTopFile;
     }
 
-    protected function getPillarTopFile()
+    protected function getPillarTopFile($env = 'base')
     {
         $pillarTopFile = new PillarTopFile();
         $pillarTopFile
             ->setFilesystem($this->getFilesystem())
-            ->load($this->getPillarDataTopFileFullPath());
+            ->load($this->getPillarDataTopFileFullPath($env));
 
         return $pillarTopFile;
     }
