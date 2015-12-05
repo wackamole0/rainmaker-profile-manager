@@ -67,6 +67,7 @@ class Application extends ParentApplication
     {
         $commands = array();
         $commands[] = new Command\WelcomeCommand();
+        $commands[] = new Command\ManifestInstallCommand();
         $commands[] = new Command\ProfileAddCommand();
         $commands[] = new Command\ProfileRemoveCommand();
         $commands[] = new Command\ProfilePresentCommand();
