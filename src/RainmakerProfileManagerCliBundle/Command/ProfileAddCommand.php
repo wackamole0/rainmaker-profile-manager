@@ -9,6 +9,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
+use RainmakerProfileManagerCliBundle\Exception\Manifest\ProfileAlreadyExistsException;
 
 class ProfileAddCommand extends BaseCommand
 {
@@ -50,9 +51,12 @@ class ProfileAddCommand extends BaseCommand
       }
 
       $masterManifest = new MasterManifest();
-      $masterManifest
-          ->load()
-          ->installProfileFromUrl($profileUrl, true, $branch);
+      try {
+          $masterManifest
+              ->load()
+              ->installProfileFromUrl($profileUrl, TRUE, $branch);
+      }
+      catch (ProfileAlreadyExistsException $e) {}
   }
 
 }

@@ -4,6 +4,8 @@ namespace RainmakerProfileManagerCliBundle\Entity;
 
 use RainmakerProfileManagerCliBundle\Util\Filesystem;
 use RainmakerProfileManagerCliBundle\Util\ProfileInstaller;
+use RainmakerProfileManagerCliBundle\Exception\Manifest\ProfileAlreadyExistsException;
+use RainmakerProfileManagerCliBundle\Exception\Manifest\NodeAlreadyExistsException;
 
 /**
  * @package RainmakerProfileManagerCliBundle\Entity
@@ -187,8 +189,7 @@ class MasterManifest
     public function installProfileFromUrl($url, $activate = true, $branch = 'master')
     {
         if ($this->profileWithUrlPresent($url, $branch)) {
-            //@todo May throw an exception here?
-            return;
+            throw new ProfileAlreadyExistsException();
         }
 
         $class = static::$profileInstallerClass;
@@ -410,7 +411,7 @@ class MasterManifest
     public function addNode($id, $profileName, $profileVersion, $environment = 'base')
     {
         if ($this->nodeWithIdPresent($id, $environment)) {
-            throw new \RuntimeException("Node '$id' already exists");
+            throw new NodeAlreadyExistsException("Node '$id' already exists");
         }
 
         if (!$this->profileWithNamePresent($profileName)) {
