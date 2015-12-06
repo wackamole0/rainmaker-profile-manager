@@ -569,7 +569,7 @@ class MasterManifest
             ' ' . str_pad('Branch', 15) .
             ' ' . str_pad('Status', 20, ' ', STR_PAD_LEFT) . "\n";
         foreach ($profiles as $profile) {
-            $hasUpdates = $profile->hasAvailableUpdates();
+            $hasUpdates = $profile->hasAvailableUpdates(false);
             $output .= str_pad($profile->getName(), 30) .
                 ' ' . str_pad($profile->getType(), 15) .
                 ' ' . str_pad($profile->getBranch(), 15) .
