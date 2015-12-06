@@ -15,8 +15,8 @@ class ProfileListCommand extends BaseCommand
     protected function configure()
     {
         $this
-            ->setName('profile:show-updates')
-            ->setDescription('List profiles and show if updates are available');
+            ->setName('profile:list')
+            ->setDescription('List profiles');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
