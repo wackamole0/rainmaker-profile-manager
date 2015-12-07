@@ -1,10 +1,10 @@
-Node                                     Profile                        Cur Vers   Latest Vers
-defaultbranch                            rainmaker/default-branch       1.0               1.0
-defaultproject                           rainmaker/default-project      1.0               1.0
-drupalclassic                            rainmaker/drupal-classic       1.0               1.0
-project1-branch1.localdev                rainmaker/default-branch       1.0               1.0
-project1-branch2.localdev                rainmaker/default-branch       1.0               1.0
-project1.localdev                        rainmaker/default-project      1.0               1.0
-project2-branch1.localdev                rainmaker/default-branch       1.0               1.0
-project2-branch2.localdev                rainmaker/default-branch       1.0               1.0
-project2.localdev                        rainmaker/default-project      1.0               1.0
+Node                                     Environment     Profile                        Cur Vers   Latest Vers
+defaultbranch                            base            rainmaker/default-branch       1.0               1.0
+defaultproject                           base            rainmaker/default-project      1.0               1.0
+drupalclassic                            base            rainmaker/drupal-classic       1.0               1.0
+project1-branch1.localdev                base            rainmaker/default-branch       1.0               1.0
+project1-branch2.localdev                base            rainmaker/default-branch       1.0               1.0
+project1.localdev                        base            rainmaker/default-project      1.0               1.0
+project2-branch1.localdev                base            rainmaker/default-branch       1.0               1.0
+project2-branch2.localdev                base            rainmaker/default-branch       1.0               1.0
+project2.localdev                        base            rainmaker/default-project      1.0               1.0

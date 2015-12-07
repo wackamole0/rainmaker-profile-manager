@@ -3,6 +3,7 @@
 namespace RainmakerProfileManagerCliBundle\Command;
 
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
@@ -16,7 +17,13 @@ class NodeListCommand extends BaseCommand
     {
         $this
             ->setName('node:list')
-            ->setDescription('List nodes');
+            ->setDescription('List nodes')
+            ->addOption(
+                'salt-environment',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'The Saltstack environment'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -24,7 +31,7 @@ class NodeListCommand extends BaseCommand
         $masterManifest = new MasterManifest();
         $text = $masterManifest
             ->load()
-            ->listNodes();
+            ->listNodes($this->getSaltStackEnvironment($input));
         $output->writeln($text);
     }
 

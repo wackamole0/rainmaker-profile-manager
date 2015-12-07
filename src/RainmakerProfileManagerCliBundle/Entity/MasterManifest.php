@@ -564,13 +564,15 @@ class MasterManifest
             }
         }
 
-        $output = str_pad('Profile', 30) .
+        $output = str_pad('Master Alias', 30) .
+            ' ' . str_pad('Profile', 30) .
             ' ' . str_pad('Type', 15) .
             ' ' . str_pad('Branch', 15) .
             ' ' . str_pad('Status', 20, ' ', STR_PAD_LEFT) . "\n";
         foreach ($profiles as $profile) {
             $hasUpdates = $profile->hasAvailableUpdates(false);
-            $output .= str_pad($profile->getName(), 30) .
+            $output .= str_pad($profile->getMasterAlias(), 30) .
+                ' ' . str_pad($profile->getName(), 30) .
                 ' ' . str_pad($profile->getType(), 15) .
                 ' ' . str_pad($profile->getBranch(), 15) .
                 ' ' . str_pad(($hasUpdates ? 'Update available' : 'Up-to-date'), 20, ' ', STR_PAD_LEFT) . "\n";
@@ -579,17 +581,22 @@ class MasterManifest
         return $output;
     }
 
-    public function listNodes()
+    public function listNodes($environment = null)
     {
         $nodes = $this->getNodes();
 
         $output = str_pad('Node', 40) .
+            ' ' . str_pad('Environment', 15) .
             ' ' . str_pad('Profile', 30) .
             ' ' . str_pad('Cur Vers', 10) .
             ' ' . str_pad('Latest Vers', 10, ' ', STR_PAD_LEFT) . "\n";
         foreach ($nodes as $node) {
             $profile = $this->getProfile($node->getProfile());
+            if (!empty($environment) && $node->getEnvironment() != $environment) {
+                continue;
+            }
             $output .= str_pad($node->getId(), 40) .
+                ' ' . str_pad($node->getEnvironment(), 15) .
                 ' ' . str_pad($node->getProfile(), 30) .
                 ' ' . str_pad($node->getVersion(), 10) .
                 ' ' . str_pad($profile->getLatestVersion(), 10, ' ', STR_PAD_LEFT) . "\n";
