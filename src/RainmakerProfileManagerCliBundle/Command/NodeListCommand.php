@@ -31,7 +31,7 @@ class NodeListCommand extends BaseCommand
         $masterManifest = new MasterManifest();
         $text = $masterManifest
             ->load()
-            ->listNodes($this->getSaltStackEnvironment($input));
+            ->listNodes($input->getOption('salt-environment'));
         $output->writeln($text);
     }
 
