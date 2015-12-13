@@ -37,7 +37,12 @@ class ProfileRootFsDownloader
         $this->tmpDirectory = $filesystem->makeTempDir();
 
         $this->performDownload();
-        $filesystem->mkdir(dirname($cacheFullPath));
+        if ($filesystem->exists($this->cacheFullPath)) {
+            $filesystem->remove($this->cacheFullPath);
+        }
+        else {
+            $filesystem->mkdir(dirname($cacheFullPath));
+        }
         $filesystem->rename($this->tmpDirectory . DIRECTORY_SEPARATOR . 'rootfs.tgz', $this->cacheFullPath);
         $filesystem->remove($this->tmpDirectory);
     }
