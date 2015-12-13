@@ -47,7 +47,7 @@ class ProfileDownloadVersionCommand extends BaseCommand
     {
         $profileName = trim($input->getArgument('name'));
         $version = trim($input->getOption('profile-version'));
-        $overwrite = $input->getOption('profile-version') == true;
+        $overwrite = $input->getOption('overwrite') == true;
         $downloadHost = trim($input->getOption('download-host'));
 
         $masterManifest = new MasterManifest();
