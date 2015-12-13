@@ -10,7 +10,7 @@ use Symfony\Component\Console\Question\Question;
 
 use RainmakerProfileManagerCliBundle\Entity\MasterManifest;
 
-class ProfileVersionCachePath extends BaseCommand
+class ProfileVersionCachePathCommand extends BaseCommand
 {
 
     protected function configure()
