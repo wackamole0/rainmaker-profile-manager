@@ -4,6 +4,7 @@ namespace RainmakerProfileManagerCliBundle\Entity;
 
 use RainmakerProfileManagerCliBundle\Util\Filesystem;
 use RainmakerProfileManagerCliBundle\Util\ProfileInstaller;
+use RainmakerProfileManagerCliBundle\Util\ProfileRootFsDownloader;
 use RainmakerProfileManagerCliBundle\Exception\Manifest\ProfileAlreadyExistsException;
 use RainmakerProfileManagerCliBundle\Exception\Manifest\NodeAlreadyExistsException;
 
@@ -16,6 +17,7 @@ class MasterManifest
     public static $profilesLocationBasePath = '/srv/saltstack/profiles';
     public static $profileManifestBaseName = 'manifest.json';
     public static $profileInstallerClass = null;
+    public static $profileRootFsDownloaderClass = null;
     public static $lxcRootfsCacheFullPath = '/var/cache/lxc/rainmaker';
 
     /**
@@ -37,6 +39,10 @@ class MasterManifest
     {
         if (is_null(static::$profileInstallerClass)) {
             static::$profileInstallerClass = '\RainmakerProfileManagerCliBundle\Util\ProfileInstaller';
+        }
+
+        if (is_null(static::$profileRootFsDownloaderClass)) {
+            static::$profileRootFsDownloaderClass = '\RainmakerProfileManagerCliBundle\Util\ProfileRootFsDownloader';
         }
 
         $this->data = new \stdClass();
@@ -579,6 +585,92 @@ class MasterManifest
         }
 
         return $output;
+    }
+
+    public function getLatestProfileVersionForProfileWithName($profileName)
+    {
+        if (!$this->profileWithNamePresent($profileName)) {
+            throw new \RuntimeException("Profile with name '$profileName' is not present");
+        }
+
+        return $this->getProfile($profileName)->getLatestVersion();
+    }
+
+    public function hasCachedProfileRootFs($profileName, $version)
+    {
+        if (!$this->profileWithNamePresent($profileName)) {
+            throw new \RuntimeException("Profile with name '$profileName' is not present");
+        }
+
+        if (!$this->hasInstalledProfileProfile($profileName, $version)) {
+            throw new \RuntimeException("Profile with name '$profileName' does not have a version '$version'");
+        }
+
+        $profile = $this->getProfile($profileName);
+        $lxcProfileCacheFullPath = $this->lxcCacheProfileRootFsFullPath($profile, $version);
+        return $this->getFilesystem()->exists($lxcProfileCacheFullPath);
+    }
+
+    protected function lxcCacheProfileRootFsFullPath(Profile $profile, $version)
+    {
+        if ($profile->getType() == 'core') {
+            throw new \RuntimeException("Core profile rootfs archives cannot be downloaded or cached.");
+        }
+
+        $lxcProfileCacheFullPath = array(
+            static::$lxcRootfsCacheFullPath,
+            ($profile->getType() == 'project' ? 'project' : 'branch'),
+            $profile->getMasterAlias()
+        );
+        $versionParts = explode('.', $version);
+        $majorVersion = array_shift($versionParts);
+        $lxcProfileCacheFullPath[] = $majorVersion;
+        $lxcProfileCacheFullPath[] = $version . '.tgz';
+
+        return implode(DIRECTORY_SEPARATOR, $lxcProfileCacheFullPath);
+    }
+
+    public function downloadProfileRootFs($profileName, $version, $overwrite = true, $downloadHost = null)
+    {
+        if ($this->hasCachedProfileRootFs($profileName, $version) && !$overwrite) {
+            return;
+        }
+
+        $profile = $this->getProfile($profileName);
+        $downloader = new static::$profileRootFsDownloaderClass();
+        $downloader->setFilesystem($this->getFilesystem());
+        $downloader->download($this->downloadUrl($profile, $version, $downloadHost), $this->lxcCacheProfileRootFsFullPath($profile, $version));
+
+    }
+
+    public function downloadUrl(Profile $profile, $version, $downloadHostOverride = null)
+    {
+        $downloadBaseUrl = $profile->getDownloadBaseUrl();
+        if (!empty($downloadHostOverride)) {
+            $downloadBaseUrl = str_replace(parse_url($downloadBaseUrl, PHP_URL_HOST), $downloadHostOverride, $downloadBaseUrl);
+        }
+
+        $downloadUrlPathParts = array(
+            'rootfs',
+            ($profile->getType() == 'project' ? 'project' : 'branch'),
+            $profile->getMasterAlias()
+        );
+        $versionParts = explode('.', $version);
+        $majorVersion = array_shift($versionParts);
+        $downloadUrlPathParts[] = $majorVersion;
+        $downloadUrlPathParts[] = $version . '.tgz';
+
+        return rtrim($downloadBaseUrl, '/') . '/' . implode('/', $downloadUrlPathParts);
+    }
+
+    public function getLxcCacheProfileRootFsFullPath($profileName, $version)
+    {
+        if ($this->hasCachedProfileRootFs($profileName, $version)) {
+            $profile = $this->getProfile($profileName);
+            return $this->lxcCacheProfileRootFsFullPath($profile, $version);
+        }
+
+        return null;
     }
 
     public function listNodes($environment = null)

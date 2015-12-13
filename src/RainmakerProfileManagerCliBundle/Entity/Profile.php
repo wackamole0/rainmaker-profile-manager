@@ -174,6 +174,10 @@ class Profile
             }
         }
 
+        if ('core' != $manifest->type && empty($manifest->downloadBaseUrl)) {
+            throw new \RuntimeException("Profile manifest is missing a 'downloadBaseUrl' attribute");
+        }
+
         return true;
     }
 
@@ -295,6 +299,19 @@ class Profile
         $this->repo->update($fetchUpdates);
     }
 
+    public function getAvailableProfileVersions()
+    {
+        $versions = $this->getManifest()->profiles;
+        usort($versions, array($this, 'cmpProfileVersions'));
+        $versions = array_reverse($versions);
+
+        $versionNumbers = array();
+        foreach ($versions as $version) {
+            $versionNumbers[] = $version->version;
+        }
+        return $versionNumbers;
+    }
+
     public function getLatestVersion()
     {
         $versions = $this->getManifest()->profiles;
@@ -304,17 +321,22 @@ class Profile
         return $latest->version;
     }
 
+    public function getDownloadBaseUrl()
+    {
+        return (!empty($this->getManifest()->downloadBaseUrl) ? $this->getManifest()->downloadBaseUrl : '');
+    }
+
     protected function cmpProfileVersions($profileA, $profileB)
     {
-        $profileAversionParts = explode('.', $profileA);
-        $profileBversionParts = explode('.', $profileB);
+        $profileAversionParts = explode('.', $profileA->version);
+        $profileBversionParts = explode('.', $profileB->version);
 
         $a = min(count($profileAversionParts), count($profileBversionParts));
         for ($i = 0; $i < $a; $i++) {
             if ($profileAversionParts[$i] < $profileBversionParts[$i]) {
                 return -1;
             }
-            elseif ($profileAversionParts[$i] < $profileBversionParts[$i]) {
+            elseif ($profileAversionParts[$i] > $profileBversionParts[$i]) {
                 return 1;
             }
         }

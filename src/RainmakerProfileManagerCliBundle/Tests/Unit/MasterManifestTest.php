@@ -11,16 +11,18 @@ use RainmakerProfileManagerCliBundle\Entity\Profile;
 use RainmakerProfileManagerCliBundle\Util\Filesystem;
 use RainmakerProfileManagerCliBundle\Util\GitRepo;
 use RainmakerProfileManagerCliBundle\Util\ProfileInstaller;
+use RainmakerProfileManagerCliBundle\Util\ProfileRootFsDownloader;
 use RainmakerProfileManagerCliBundle\Tests\Unit\Mock\GitRepoMock;
+use RainmakerProfileManagerCliBundle\Tests\Unit\Mock\ProfileRootFsDownloaderMock;
 
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * Unit tests \Rainmaker\Task\Project\Create
+ * Unit tests \RainmakerProfileManagerCliBundle\Entity\MasterManifest
  *
  * @package RainmakerProfileManagerCliBundle\Tests\Unit
  */
-class CreateTest extends AbstractUnitTest
+class MasterManifestTest extends AbstractUnitTest
 {
 
     /**
@@ -374,20 +376,43 @@ class CreateTest extends AbstractUnitTest
     }
 
     /**
+     * Test retriving a sorted list of profile versions and test getting the most recent version available of a profile.
+     */
+    public function testRetrievingMostRecentProfileVersion()
+    {
+        $this->createMockMasterManifestInstallation();
+        $profile = $this->masterManifest->getProfile('rainmaker/drupal-classic');
+        $this->assertEquals(
+            array('1.0', '0.5.1', '0.5'),
+            $profile->getAvailableProfileVersions()
+        );
+        $this->assertEquals('1.0', $this->masterManifest->getLatestProfileVersionForProfileWithName('rainmaker/drupal-classic'));
+    }
+
+    /**
      * Test downloading rootfs of profile version.
      */
     public function testDownloadingRootfsOfProfileVersion()
     {
-        throw new \RuntimeException('test body required implementation');
+        $this->createMockMasterManifestInstallation();
+
+        $this->assertFalse($this->masterManifest->hasCachedProfileRootFs('rainmaker/default-branch', '1.0'));
+        $this->masterManifest->downloadProfileRootFs('rainmaker/default-branch', '1.0');
+        $this->assertTrue($this->masterManifest->hasCachedProfileRootFs('rainmaker/default-branch', '1.0'));
+
+        $this->assertEquals(
+            '/var/cache/lxc/rainmaker/branch/rainmaker/default-branch/1/1.0.tgz',
+            $this->masterManifest->getLxcCacheProfileRootFsFullPath('rainmaker/default-branch', '1.0')
+        );
     }
 
     /**
      * Test retrieving list of post-provisioning scripts to be run in JSON form.
      */
-    public function testRetrievalOfPostProvisioningScripts()
-    {
-        throw new \RuntimeException('test body required implementation');
-    }
+    //public function testRetrievalOfPostProvisioningScripts()
+    //{
+    //    throw new \RuntimeException('test body required implementation');
+    //}
 
 
     //- Utility methods
@@ -412,6 +437,7 @@ class CreateTest extends AbstractUnitTest
             $this->filesystemMock = $this->createFilesystemMock();
         }
 
+        MasterManifest::$profileRootFsDownloaderClass = 'RainmakerProfileManagerCliBundle\Tests\Unit\Mock\ProfileRootFsDownloaderMock';
         $this->masterManifest = new MasterManifest();
         $this->masterManifest
             ->setFilesystem($this->filesystemMock)
@@ -446,6 +472,7 @@ class CreateTest extends AbstractUnitTest
         $profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'core',
             'name' => 'core',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
@@ -457,6 +484,7 @@ class CreateTest extends AbstractUnitTest
         $profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'project',
             'name' => 'rainmaker/default-project',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
@@ -468,6 +496,7 @@ class CreateTest extends AbstractUnitTest
         $profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'branch',
             'name' => 'rainmaker/default-branch',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
@@ -479,9 +508,16 @@ class CreateTest extends AbstractUnitTest
         $profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'branch',
             'name' => 'rainmaker/drupal-classic',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
+                ),
+                array(
+                    'version' => '0.5'
+                ),
+                array(
+                    'version' => '0.5.1'
                 )
             )
         ));
@@ -509,6 +545,7 @@ class CreateTest extends AbstractUnitTest
         $this->profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'core',
             'name' => 'core',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
@@ -545,6 +582,7 @@ class CreateTest extends AbstractUnitTest
         $this->profileManifest = $this->generateMockProfileManifest(array(
             'type' => 'branch',
             'name' => 'wackamole0/symfony2',
+            'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
                     'version' => '1.0'
@@ -567,6 +605,7 @@ class CreateTest extends AbstractUnitTest
         $profileManifest = new \stdClass();
         $profileManifest->type = isset($manifestData['type']) ? $manifestData['type'] : '';
         $profileManifest->name = isset($manifestData['name']) ? $manifestData['name'] : '';
+        $profileManifest->downloadBaseUrl = isset($manifestData['downloadBaseUrl']) ? $manifestData['downloadBaseUrl'] : '';
         $profileManifest->profiles = array();
         if (!empty($manifestData['profiles'])) {
             foreach ($manifestData['profiles'] as $profileVersionData) {
