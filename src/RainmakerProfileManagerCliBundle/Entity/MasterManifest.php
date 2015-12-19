@@ -652,7 +652,7 @@ class MasterManifest
 
         $downloadUrlPathParts = array(
             'rootfs',
-            ($profile->getType() == 'project' ? 'project' : 'branch'),
+            ($profile->getType() == 'project' ? 'project' : 'project-branch'),
             $profile->getMasterAlias()
         );
         $versionParts = explode('.', $version);
