@@ -392,10 +392,10 @@ class MasterManifest
      * @param $id
      * @return Node
      */
-    public function getNode($id)
+    public function getNode($id, $environment = 'base')
     {
         foreach ($this->getNodes() as $node) {
-            if ($node->getId() == $id) {
+            if ($node->getId() == $id && $node->getEnvironment() == $environment) {
                 return $node;
             }
         }
@@ -459,7 +459,7 @@ class MasterManifest
             throw new \RuntimeException("Node '$id' does not exist");
         }
 
-        $node = $this->getNode($id);
+        $node = $this->getNode($id, $environment);
 
         $saltTopFile = $this->getSaltTopFile($environment);
         $saltTopFile->remove($node);
