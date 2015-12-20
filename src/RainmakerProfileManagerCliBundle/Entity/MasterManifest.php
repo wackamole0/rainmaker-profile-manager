@@ -646,6 +646,7 @@ class MasterManifest
     public function downloadUrl(Profile $profile, $version, $downloadHostOverride = null)
     {
         $downloadBaseUrl = $profile->getDownloadBaseUrl();
+        $downloadHostOverride = str_replace('http://', '', $downloadHostOverride);
         if (!empty($downloadHostOverride)) {
             $downloadBaseUrl = str_replace(parse_url($downloadBaseUrl, PHP_URL_HOST), $downloadHostOverride, $downloadBaseUrl);
         }
