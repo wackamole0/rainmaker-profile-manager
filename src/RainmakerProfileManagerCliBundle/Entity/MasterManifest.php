@@ -721,15 +721,14 @@ class MasterManifest
     {
         $environments = 'all' == $env ? static::$saltEnvironments : array($env);
         foreach ($environments as $environment) {
-            foreach ($this->getNodes() as $node) {
-                $saltTopFile = $this->getSaltTopFile($environment);
+            $saltTopFile = $this->getSaltTopFile($environment);
+            $pillarTopFile = $this->getPillarTopFile($environment);
+            foreach ($this->getNodes($environment) as $node) {
                 $saltTopFile->addOrUpdate($node);
-                $saltTopFile->save();
-
-                $pillarTopFile = $this->getPillarTopFile($environment);
                 $pillarTopFile->addOrUpdate($node);
-                $pillarTopFile->save();
             }
+            $saltTopFile->save();
+            $pillarTopFile->save();
         }
     }
 }

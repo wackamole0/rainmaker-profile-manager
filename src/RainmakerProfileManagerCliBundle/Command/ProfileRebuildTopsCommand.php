@@ -28,10 +28,14 @@ class ProfileRebuildTopsCommand extends BaseCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $environment = $input->getOption('salt-environment');
+        if (empty($environment)) {
+            $environment = 'base';
+        }
         $masterManifest = new MasterManifest();
         $masterManifest
             ->load()
-            ->rebuildTopFiles($input->getOption('salt-environment'));
+            ->rebuildTopFiles($environment);
     }
 
 }
