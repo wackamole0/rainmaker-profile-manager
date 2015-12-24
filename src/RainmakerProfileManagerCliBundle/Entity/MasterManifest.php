@@ -343,6 +343,20 @@ class MasterManifest
         return $this;
     }
 
+    public function getProfileVersionMountsAndExports($profileName, $version)
+    {
+        if (!$this->profileWithNamePresent($profileName)) {
+            throw new \RuntimeException("Profile with name '$profileName' is not present");
+        }
+
+        $profile = $this->getProfile($profileName);
+        if (!$profile->hasVersion($version)) {
+            throw new \RuntimeException("Profile with name '$profileName' does not have version '$version' present");
+        }
+
+        return $profile->getMountsAndExports($version);
+    }
+
     protected function normalise()
     {
         if (!isset($this->data->profiles)) {

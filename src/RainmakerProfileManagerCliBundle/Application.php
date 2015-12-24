@@ -74,8 +74,10 @@ class Application extends ParentApplication
         $commands[] = new Command\ProfileListCommand();
         $commands[] = new Command\ProfileShowUpdatesCommand();
         $commands[] = new Command\ProfileUpdateCommand();
+        $commands[] = new Command\ProfileLatestVersionCommand();
         $commands[] = new Command\ProfileDownloadVersionCommand();
         $commands[] = new Command\ProfileVersionCachePathCommand();
+        $commands[] = new Command\ProfileVersionMetadataCommand();
         $commands[] = new Command\ProfilePurgeCachesCommand();
         $commands[] = new Command\NodeAddCommand();
         $commands[] = new Command\NodeRemoveCommand();

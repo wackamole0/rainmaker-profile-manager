@@ -326,6 +326,32 @@ class Profile
         return (!empty($this->getManifest()->downloadBaseUrl) ? $this->getManifest()->downloadBaseUrl : '');
     }
 
+    public function getProfileVersionMetaData($version)
+    {
+        if (!$this->hasVersion($version)) {
+            throw new \RuntimeException('Profile with name ' . $this->getName() . " does not have version '$version' present");
+        }
+
+        foreach ($this->getManifest()->profiles as $profileVersionMetadata) {
+            if ($profileVersionMetadata->version == $version) {
+                return $profileVersionMetadata;
+            }
+        }
+    }
+
+    public function getMountsAndExports($version)
+    {
+        if (!$this->hasVersion($version)) {
+            throw new \RuntimeException('Profile with name ' . $this->getName() . " does not have version '$version' present");
+        }
+
+        $profileVersionMetadata = $this->getProfileVersionMetaData($version);
+        $mountsAndExports = new \stdClass();
+        $mountsAndExports->mounts = isset($profileVersionMetadata->mounts) ? $profileVersionMetadata->mounts : array();
+        $mountsAndExports->exports = isset($profileVersionMetadata->exports) ? $profileVersionMetadata->exports : array();
+        return json_encode($mountsAndExports);
+    }
+
     protected function cmpProfileVersions($profileA, $profileB)
     {
         $profileAversionParts = explode('.', $profileA->version);

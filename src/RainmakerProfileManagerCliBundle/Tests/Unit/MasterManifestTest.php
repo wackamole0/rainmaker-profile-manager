@@ -407,6 +407,20 @@ class MasterManifestTest extends AbstractUnitTest
     }
 
     /**
+     * Test retrieving list of mounts and exports for profile.
+     */
+    public function testRetrievalOfProfileMountsAndExports() {
+        $this->createMockMasterManifestInstallation();
+
+        $json = '{"mounts":[{"source":"\/var\/cache\/lxc\/rainmaker","target":"{{container_rootfs}}\/var\/cache\/lxc\/rainmaker","group":"bind"},{"source":"\/srv\/saltstack","target":"{{container_rootfs}}\/srv\/saltstack","group":"bind"}],"exports":[]}';
+        $this->assertEquals($json, $this->masterManifest->getProfileVersionMountsAndExports('rainmaker/default-project', '1.0'));
+
+        $json = '{"mounts":[{"source":"\/srv\/saltstack","target":"{{container_rootfs}}\/srv\/saltstack","group":"bind"},{"source":"{{container_rootfs}}\/rootfs\/var\/www\/html","target":"\/export\/rainmaker\/{{container_name}}","group":"nfs"}],"exports":[{"source":"\/export\/rainmaker\/{{container_name}}","group":""}]}';
+        $this->assertEquals($json, $this->masterManifest->getProfileVersionMountsAndExports('rainmaker/drupal-classic', '1.0'));
+
+    }
+
+    /**
      * Test retrieving list of post-provisioning scripts to be run in JSON form.
      */
     //public function testRetrievalOfPostProvisioningScripts()
@@ -487,7 +501,20 @@ class MasterManifestTest extends AbstractUnitTest
             'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
-                    'version' => '1.0'
+                    'version' => '1.0',
+                    'mounts' => array(
+                        array(
+                            'source' => '/var/cache/lxc/rainmaker',
+                            'target' => '{{container_rootfs}}/var/cache/lxc/rainmaker',
+                            'group' => 'bind'
+                        ),
+                        array(
+                            'source' => '/srv/saltstack',
+                            'target' => '{{container_rootfs}}/srv/saltstack',
+                            'group' => 'bind'
+                        )
+                    ),
+                    'exports' => array()
                 )
             )
         ));
@@ -499,7 +526,20 @@ class MasterManifestTest extends AbstractUnitTest
             'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
-                    'version' => '1.0'
+                    'version' => '1.0',
+                    'mounts' => array(
+                        array(
+                            'source' => '/srv/saltstack',
+                            'target' => '{{container_rootfs}}/srv/saltstack',
+                            'group' => 'bind'
+                        ),
+                        array(
+                            'source' => '{{container_rootfs}}/rootfs/var/www/html',
+                            'target' => '/export/rainmaker/{{container_name}}',
+                            'group' => 'nfs'
+                        )
+                    ),
+                    'exports' => array()
                 )
             )
         ));
@@ -511,13 +551,64 @@ class MasterManifestTest extends AbstractUnitTest
             'downloadBaseUrl' => 'http://image.rainmaker-dev.org',
             'profiles' => array(
                 array(
-                    'version' => '1.0'
+                    'version' => '1.0',
+                    'mounts' => array(
+                        array(
+                            'source' => '/srv/saltstack',
+                            'target' => '{{container_rootfs}}/srv/saltstack',
+                            'group' => 'bind'
+                        ),
+                        array(
+                            'source' => '{{container_rootfs}}/rootfs/var/www/html',
+                            'target' => '/export/rainmaker/{{container_name}}',
+                            'group' => 'nfs'
+                        )
+                    ),
+                    'exports' => array(
+                        array(
+                            'source' => '/export/rainmaker/{{container_name}}'
+                        )
+                    )
                 ),
                 array(
-                    'version' => '0.5'
+                    'version' => '0.5',
+                    'mounts' => array(
+                        array(
+                            'source' => '/srv/saltstack',
+                            'target' => '{{container_rootfs}}/srv/saltstack',
+                            'group' => 'bind'
+                        ),
+                        array(
+                            'source' => '{{container_rootfs}}/rootfs/var/www/html',
+                            'target' => '/export/rainmaker/{{container_name}}',
+                            'group' => 'nfs'
+                        )
+                    ),
+                    'exports' => array(
+                        array(
+                            'source' => '/export/rainmaker/{{container_name}}'
+                        )
+                    )
                 ),
                 array(
-                    'version' => '0.5.1'
+                    'version' => '0.5.1',
+                    'mounts' => array(
+                        array(
+                            'source' => '/srv/saltstack',
+                            'target' => '{{container_rootfs}}/srv/saltstack',
+                            'group' => 'bind'
+                        ),
+                        array(
+                            'source' => '{{container_rootfs}}/rootfs/var/www/html',
+                            'target' => '/export/rainmaker/{{container_name}}',
+                            'group' => 'nfs'
+                        )
+                    ),
+                    'exports' => array(
+                        array(
+                            'source' => '/export/rainmaker/{{container_name}}'
+                        )
+                    )
                 )
             )
         ));
@@ -611,6 +702,28 @@ class MasterManifestTest extends AbstractUnitTest
             foreach ($manifestData['profiles'] as $profileVersionData) {
                 $profileVersion = new \stdClass();
                 $profileVersion->version = isset($profileVersionData['version']) ? $profileVersionData['version'] : '';
+                $profileVersion->mounts = array();
+                $profileVersion->exports = array();
+
+                if (isset($profileVersionData['mounts']) && is_array($profileVersionData['mounts'])) {
+                    foreach ($profileVersionData['mounts'] as $mountData) {
+                        $mount = new \stdClass();
+                        $mount->source = $mountData['source'];
+                        $mount->target = $mountData['target'];
+                        $mount->group = isset($mountData['group']) ? $mountData['group'] : '';
+                        $profileVersion->mounts[] = $mount;
+                    }
+                }
+
+                if (isset($profileVersionData['exports']) && is_array($profileVersionData['exports'])) {
+                    foreach ($profileVersionData['exports'] as $exportData) {
+                        $export = new \stdClass();
+                        $export->source = $exportData['source'];
+                        $export->group = isset($exportData['group']) ? $exportData['group'] : '';
+                        $profileVersion->exports[] = $export;
+                    }
+                }
+
                 $profileManifest->profiles[] = $profileVersion;
             }
         }
