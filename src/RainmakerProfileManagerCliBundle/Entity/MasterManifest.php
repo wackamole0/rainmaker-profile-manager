@@ -19,6 +19,7 @@ class MasterManifest
     public static $profileInstallerClass = null;
     public static $profileRootFsDownloaderClass = null;
     public static $lxcRootfsCacheFullPath = '/var/cache/lxc/rainmaker';
+    public static $saltEnvironments = array('base', 'builder', 'profile-builder', 'testbed');
 
     /**
      * @var \RainmakerProfileManagerCliBundle\Util\Filesystem
@@ -387,10 +388,14 @@ class MasterManifest
     /**
      * @return Node[]
      */
-    public function getNodes()
+    public function getNodes($environment = null)
     {
         $nodes = array();
         foreach ($this->data->nodes as $nodeInfo) {
+            if (!empty($environment) && $environment != $nodeInfo->environment) {
+                continue;
+            }
+
             $profile = $this->getProfile($nodeInfo->profile);
             $nodeInfo->type = $profile->getType();
 
@@ -710,5 +715,21 @@ class MasterManifest
         }
 
         return $output;
+    }
+
+    public function rebuildTopFiles($env = 'base')
+    {
+        $environments = 'all' == $env ? static::$saltEnvironments : array($env);
+        foreach ($environments as $environment) {
+            foreach ($this->getNodes() as $node) {
+                $saltTopFile = $this->getSaltTopFile($environment);
+                $saltTopFile->addOrUpdate($node);
+                $saltTopFile->save();
+
+                $pillarTopFile = $this->getPillarTopFile($environment);
+                $pillarTopFile->addOrUpdate($node);
+                $pillarTopFile->save();
+            }
+        }
     }
 }

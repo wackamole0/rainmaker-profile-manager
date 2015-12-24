@@ -79,6 +79,7 @@ class Application extends ParentApplication
         $commands[] = new Command\ProfileVersionCachePathCommand();
         $commands[] = new Command\ProfileVersionMetadataCommand();
         $commands[] = new Command\ProfilePurgeCachesCommand();
+        $commands[] = new Command\ProfileRebuildTopsCommand();
         $commands[] = new Command\NodeAddCommand();
         $commands[] = new Command\NodeRemoveCommand();
         $commands[] = new Command\NodeListCommand();
